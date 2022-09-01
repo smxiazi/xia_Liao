@@ -4,6 +4,8 @@
 * 默认使用jdk1.8编译
 * 在最新版的burp2.x中jdk为1x,会导致插件不可用,请下载jdk16版本试试,若还不行，请自行下载源码使用当前电脑的jdk1x进行编译,谢谢。
 * 由于里面包含一句话，微软杀毒软件会爆毒。
+* <img width="1016" alt="image" src="https://user-images.githubusercontent.com/30351807/187931574-92efca8b-1e7f-4e17-900f-79b6fd7e2a66.png">
+
 
 ***********
 

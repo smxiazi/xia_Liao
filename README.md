@@ -4,13 +4,13 @@
 * 默认使用jdk1.8编译
 * 在最新版的burp2.x中jdk为1x,会导致插件不可用,请下载jdk16版本试试,若还不行，请自行下载源码使用当前电脑的jdk1x进行编译,谢谢。
 * 由于里面包含一句话，微软杀毒软件会爆毒。
-* <img width="1016" alt="image" src="https://user-images.githubusercontent.com/30351807/187931574-92efca8b-1e7f-4e17-900f-79b6fd7e2a66.png">
+* <img width="823" alt="image" src="https://user-images.githubusercontent.com/30351807/187931892-f72bcfb4-5aaf-4273-bb90-2b60cedc9bda.png">
 
 
 ***********
 
 * burp 插件。
-* 用于web渗透注册时，快速生成需要的资料用来填写，资料包含：姓名、手机号、身份证、统一社会信用代码、组织机构代码、银行卡，以及各类web语言的hello world输出。
+* 用于web渗透注册时，快速生成需要的资料用来填写，资料包含：姓名、手机号、身份证、统一社会信用代码、组织机构代码、银行卡，以及各类web语言的hello world输出与对应的一句话木马。
 * 根据各类公开算法以及校验码生成对应的数据。
 * 感谢名单：Shincehor
 

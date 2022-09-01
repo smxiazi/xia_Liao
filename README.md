@@ -3,8 +3,6 @@
 ## 注意
 * 默认使用jdk1.8编译
 * 在最新版的burp2.x中jdk为1x,会导致插件不可用,请下载jdk16版本试试,若还不行，请自行下载源码使用当前电脑的jdk1x进行编译,谢谢。
-* 由于里面包含一句话，杀毒软件会爆毒。
-* <img width="823" alt="image" src="https://user-images.githubusercontent.com/30351807/187931892-f72bcfb4-5aaf-4273-bb90-2b60cedc9bda.png">
 
 
 ***********
@@ -20,4 +18,11 @@
 * xia Liao (瞎料)的诞生
 
 <img width="1344" alt="image" src="https://user-images.githubusercontent.com/30351807/187430077-b80e9f06-9761-44bf-a9d9-df15cc89e9e0.png">
+
+**********
+
+# 备注⚠️
+* 由于里面包含一句话，杀毒软件会爆毒。
+* <img width="823" alt="image" src="https://user-images.githubusercontent.com/30351807/187931892-f72bcfb4-5aaf-4273-bb90-2b60cedc9bda.png">
+
 

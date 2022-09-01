@@ -17,15 +17,17 @@
 #### xia Liao 1.1
 * 解决微软爆毒问题。（把asp和php的一句话base64编码一下）
 
-<img width="1344" alt="image" src="https://user-images.githubusercontent.com/30351807/187430077-b80e9f06-9761-44bf-a9d9-df15cc89e9e0.png">
+<img width="977" alt="image" src="https://user-images.githubusercontent.com/30351807/187942420-d5a7db47-39b6-46d0-bd10-04a9f648a463.png">
+
 
 
 **********
 ### 2022-8-30
 #### xia Liao 1.0
 * xia Liao (瞎料)的诞生
+* <img width="1344" alt="image" src="https://user-images.githubusercontent.com/30351807/187430077-b80e9f06-9761-44bf-a9d9-df15cc89e9e0.png">
 
-<img width="1344" alt="image" src="https://user-images.githubusercontent.com/30351807/187430077-b80e9f06-9761-44bf-a9d9-df15cc89e9e0.png">
+<img width="1359" alt="image" src="https://user-images.githubusercontent.com/30351807/187942561-ebf2f0aa-25d7-47ca-9eb9-7787092c7b19.png">
 
 **********
 

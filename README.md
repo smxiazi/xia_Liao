@@ -30,7 +30,7 @@
 **********
 
 # 备注⚠️
-* 由于里面包含一句话，杀毒软件会爆毒。
+* 由于里面包含一句话，1.0版本杀毒软件会爆毒。
 * <img width="823" alt="image" src="https://user-images.githubusercontent.com/30351807/187931892-f72bcfb4-5aaf-4273-bb90-2b60cedc9bda.png">
 
 

@@ -12,6 +12,17 @@
 * 根据各类公开算法以及校验码生成对应的数据。
 * 感谢名单：Shinceho、SongS、S
 
+
+**********
+### 2022-9-3
+#### xia Liao 1.2
+* 新增弱口令生成功能。
+
+<img width="1352" alt="image" src="https://user-images.githubusercontent.com/30351807/188252691-45429549-35c6-40df-80e8-0ef954f7ed58.png">
+
+
+
+
 **********
 ### 2022-9-1
 #### xia Liao 1.1

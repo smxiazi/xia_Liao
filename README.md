@@ -15,6 +15,15 @@
 
 
 **********
+### 2022-10-18
+#### xia Liao 1.4
+* 新增常见的路径字典
+
+<img width="979" alt="image" src="https://user-images.githubusercontent.com/30351807/196264215-a3d09dc4-c214-4361-8056-7e898ed34bb0.png">
+
+
+
+**********
 ### 2022-9-7
 #### xia Liao 1.3
 * 修复字典生成处，QQ字典生成错误（感谢 Pluto. 提醒）。

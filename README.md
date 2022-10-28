@@ -28,10 +28,6 @@
 #### xia Liao 1.3
 * 修复字典生成处，QQ字典生成错误（感谢 Pluto. 提醒）。
 
-<img width="979" alt="image" src="https://user-images.githubusercontent.com/30351807/188807584-d8b33adb-11b8-414a-90b3-a58b8cb35aa8.png">
-
-
-
 **********
 ### 2022-9-3
 #### xia Liao 1.2

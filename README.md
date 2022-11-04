@@ -12,6 +12,10 @@
 * 根据各类公开算法以及校验码生成对应的数据。
 * 支持弱口令密码字典生成。
 * 感谢名单：Shinceho、SongS、S、吃个橘子
+***********
+## 工具界面
+
+<img width="979" alt="image" src="https://user-images.githubusercontent.com/30351807/199934739-694f5feb-90df-4a2a-b660-fb58780da845.png">
 
 
 **********

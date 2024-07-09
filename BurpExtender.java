@@ -241,6 +241,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
 
                 //右边框下面的内容
                 JPanel jps_2=new JPanel();
+                jps_2.setLayout(new GridLayout(1, 1)); //六行一列
                 jta=new JTextArea(18,16);
                 jta.setLineWrap(true);//自动换行
                 jta.setEditable(false);//不可编辑

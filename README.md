@@ -15,10 +15,25 @@
 ***********
 ## 工具界面
 
-<img width="979" alt="image" src="https://user-images.githubusercontent.com/30351807/204946363-ed412ec1-7886-4d55-996b-02b13950c6ff.png">
+<img width="1618" alt="image" src="https://github.com/smxiazi/xia_Liao/assets/30351807/5cacf29f-7244-4cdf-9fd0-e4c3f85a6856">
 
 
-<img width="979" alt="image" src="https://user-images.githubusercontent.com/30351807/204945906-9de2de6f-2f70-4700-b46b-052551f0fbde.png">
+**********
+### 2024-7-10
+#### xia Liao 1.7
+* 修复 Windows在线进程/杀软识别 在线接口问题
+* 新增命令bypass
+* 新增反弹shell生成
+* 新增格式转换
+
+  <img width="1559" alt="image" src="https://github.com/smxiazi/xia_Liao/assets/30351807/28e4f4cf-8461-4821-a411-131649e0da16">
+
+  <img width="1438" alt="image" src="https://github.com/smxiazi/xia_Liao/assets/30351807/40ed838b-5316-48dd-9361-c43501ba13e3">
+
+  <img width="1151" alt="image" src="https://github.com/smxiazi/xia_Liao/assets/30351807/ac63e195-1e05-4307-93eb-2a6e3af12b4d">
+
+
+
 
 **********
 ### 2022-12-1
